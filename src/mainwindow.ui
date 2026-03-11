@@ -6,22 +6,58 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1024</width>
-    <height>768</height>
+    <width>1200</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>网络联机五子棋客户端</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="styleSheet">
+    <string notr="true">background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                                stop:0 #667eea, stop:1 #764ba2);</string>
+   </property>
    <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>20</number>
+    </property>
+    <property name="leftMargin">
+     <number>40</number>
+    </property>
+    <property name="topMargin">
+     <number>30</number>
+    </property>
+    <property name="rightMargin">
+     <number>40</number>
+    </property>
+    <property name="bottomMargin">
+     <number>30</number>
+    </property>
     <item>
      <widget class="QLabel" name="titleLabel">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>60</height>
+       </size>
+      </property>
       <property name="font">
        <font>
-        <pointsize>24</pointsize>
+        <family>Microsoft YaHei UI</family>
+        <pointsize>36</pointsize>
+        <weight>75</weight>
         <bold>true</bold>
        </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel#titleLabel {
+    color: #ffffff;
+    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}</string>
       </property>
       <property name="text">
        <string>网络联机五子棋</string>
@@ -32,7 +68,62 @@
      </widget>
     </item>
     <item>
+     <widget class="QLabel" name="subtitleLabel">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei UI</family>
+        <pointsize>16</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+    color: rgba(255, 255, 255, 0.9);
+}</string>
+      </property>
+      <property name="text">
+       <string>Online Gomoku Game Client</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QLabel" name="statusLabel">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>35</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>200</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei UI</family>
+        <pointsize>12</pointsize>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel#statusLabel {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    padding: 8px 20px;
+    border-radius: 18px;
+}</string>
+      </property>
       <property name="text">
        <string>状态: 未连接</string>
       </property>
@@ -49,24 +140,212 @@
       <property name="sizeHint" stdset="0">
        <size>
         <width>20</width>
-        <height>40</height>
+        <height>50</height>
        </size>
       </property>
      </spacer>
     </item>
     <item>
-     <widget class="QLabel" name="welcomeLabel">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
+     <widget class="QFrame" name="welcomeCard">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>300</height>
+       </size>
       </property>
-      <property name="text">
-       <string>欢迎使用网络联机五子棋客户端</string>
+      <property name="styleSheet">
+       <string notr="true">QFrame {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}</string>
       </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
       </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QVBoxLayout" name="welcomeLayout">
+       <property name="spacing">
+        <number>25</number>
+       </property>
+       <property name="leftMargin">
+        <number>40</number>
+       </property>
+       <property name="topMargin">
+        <number>40</number>
+       </property>
+       <property name="rightMargin">
+        <number>40</number>
+       </property>
+       <property name="bottomMargin">
+        <number>40</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="welcomeLabel">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <pointsize>22</pointsize>
+           <weight>50</weight>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLabel {
+    color: #2c3e50;
+}</string>
+         </property>
+         <property name="text">
+          <string>欢迎使用网络联机五子棋客户端</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="descriptionLabel">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <pointsize>14</pointsize>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QLabel {
+    color: #7f8c8d;
+}</string>
+         </property>
+         <property name="text">
+          <string>与全球玩家实时对弈，体验经典五子棋的乐趣</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="buttonLayout">
+         <property name="spacing">
+          <number>20</number>
+         </property>
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="loginButton">
+           <property name="minimumSize">
+            <size>
+             <width>150</width>
+             <height>50</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Microsoft YaHei UI</family>
+             <pointsize>14</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #667eea, stop:1 #764ba2);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 25px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QPushButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #5568d3, stop:1 #6a42a0);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+}
+
+QPushButton:pressed {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #6a42a0, stop:1 #5568d3);
+}</string>
+           </property>
+           <property name="text">
+            <string>登录</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="registerButton">
+           <property name="minimumSize">
+            <size>
+             <width>150</width>
+             <height>50</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Microsoft YaHei UI</family>
+             <pointsize>14</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QPushButton {
+    background: transparent;
+    border: 2px solid #667eea;
+    color: #667eea;
+    border-radius: 10px;
+    padding: 10px 25px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QPushButton:hover {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: #5568d3;
+    color: #5568d3;
+}
+
+QPushButton:pressed {
+    background: rgba(102, 126, 234, 0.2);
+}</string>
+           </property>
+           <property name="text">
+            <string>注册</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </widget>
     </item>
     <item>
@@ -77,10 +356,31 @@
       <property name="sizeHint" stdset="0">
        <size>
         <width>20</width>
-        <height>40</height>
+        <height>50</height>
        </size>
       </property>
      </spacer>
+    </item>
+    <item>
+     <widget class="QLabel" name="versionLabel">
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei UI</family>
+        <pointsize>10</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+    color: rgba(255, 255, 255, 0.7);
+}</string>
+      </property>
+      <property name="text">
+       <string>版本 1.0.0 | Powered by Qt 5.15.2</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -89,19 +389,61 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1024</width>
+     <width>1200</width>
      <height>22</height>
     </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QMenuBar {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 5px 10px;
+}
+
+QMenuBar::item {
+    padding: 8px 15px;
+    border-radius: 5px;
+    color: #2c3e50;
+}
+
+QMenuBar::item:selected {
+    background-color: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+}
+
+QMenu {
+    background-color: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 5px;
+}
+
+QMenu::item {
+    padding: 10px 20px;
+    border-radius: 5px;
+    color: #2c3e50;
+}
+
+QMenu::item:selected {
+    background-color: #667eea;
+    color: #ffffff;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: #e9ecef;
+    margin: 5px 10px;
+}</string>
    </property>
    <widget class="QMenu" name="menuGame">
     <property name="title">
      <string>游戏</string>
     </property>
-    <addaction name="actionLogin"/>
-    <addaction name="actionRegister"/>
-    <addaction name="separator"/>
     <addaction name="actionConnect"/>
     <addaction name="actionDisconnect"/>
+    <addaction name="separator"/>
+    <addaction name="actionLogin"/>
+    <addaction name="actionRegister"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
@@ -114,17 +456,15 @@
    <addaction name="menuGame"/>
    <addaction name="menuHelp"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionLogin">
-   <property name="text">
-    <string>登录</string>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="styleSheet">
+    <string notr="true">QStatusBar {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    color: #2c3e50;
+}</string>
    </property>
-  </action>
-  <action name="actionRegister">
-   <property name="text">
-    <string>注册</string>
-   </property>
-  </action>
+  </widget>
   <action name="actionConnect">
    <property name="text">
     <string>连接服务器</string>
@@ -133,6 +473,16 @@
   <action name="actionDisconnect">
    <property name="text">
     <string>断开连接</string>
+   </property>
+  </action>
+  <action name="actionLogin">
+   <property name="text">
+    <string>登录</string>
+   </property>
+  </action>
+  <action name="actionRegister">
+   <property name="text">
+    <string>注册</string>
    </property>
   </action>
   <action name="actionExit">

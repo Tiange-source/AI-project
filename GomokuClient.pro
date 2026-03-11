@@ -54,9 +54,14 @@ HEADERS += \
 FORMS += \
     $$SRC_DIR/mainwindow.ui
 
+# 资源文件
+RESOURCES += \
+    $$SRC_DIR/resources.qrc
+
 # Protobuf文件（包含但不编译）
 OTHER_FILES += \
-    $$SHARED_PROTO_DIR/gomoku.proto
+    $$SHARED_PROTO_DIR/gomoku.proto \
+    $$SRC_DIR/styles.qss
 
 # 编译Protobuf文件（如果存在）
 exists($$PROTOBUF_SOURCES) {

@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QSharedPointer>
+#include <QFile>
 #include "network/tcpclient.h"
 #include "network/messagedispatcher.h"
 #include "data/userprofile.h"

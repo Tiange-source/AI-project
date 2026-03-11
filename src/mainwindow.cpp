@@ -60,15 +60,58 @@ void MainWindow::initUI()
     setWindowTitle("网络联机五子棋客户端");
 
     // 设置窗口大小
-    resize(1024, 768);
+    resize(1200, 800);
 
-    // TODO: 初始化各个界面组件
-    // - 登录界面
-    // - 注册界面
-    // - 游戏大厅
-    // - 游戏房间
-    // - 排行榜
-    // - 观战界面
+    // 加载样式表
+    QFile styleFile(":/styles.qss");
+    if (styleFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(styleFile.readAll());
+        qApp->setStyleSheet(styleSheet);
+        styleFile.close();
+        qDebug() << "Style sheet loaded";
+    } else {
+        qWarning() << "Failed to load style sheet";
+    }
+
+    // 连接按钮信号
+    connect(ui_->loginButton, &QPushButton::clicked, this, [this]() {
+        qDebug() << "Login button clicked";
+        // TODO: 显示登录对话框
+        QMessageBox::information(this, "登录", "登录功能待实现");
+    });
+
+    connect(ui_->registerButton, &QPushButton::clicked, this, [this]() {
+        qDebug() << "Register button clicked";
+        // TODO: 显示注册对话框
+        QMessageBox::information(this, "注册", "注册功能待实现");
+    });
+
+    // 连接菜单动作
+    connect(ui_->actionConnect, &QAction::triggered, this, [this]() {
+        qDebug() << "Connect to server";
+        // TODO: 连接到服务器
+        QMessageBox::information(this, "连接服务器", "连接功能待实现");
+    });
+
+    connect(ui_->actionDisconnect, &QAction::triggered, this, [this]() {
+        qDebug() << "Disconnect from server";
+        if (tcpClient_->isConnected()) {
+            tcpClient_->disconnectFromServer();
+        }
+    });
+
+    connect(ui_->actionLogin, &QAction::triggered, ui_->loginButton, &QPushButton::click);
+    connect(ui_->actionRegister, &QAction::triggered, ui_->registerButton, &QPushButton::click);
+
+    connect(ui_->actionExit, &QAction::triggered, this, &QMainWindow::close);
+
+    connect(ui_->actionAbout, &QAction::triggered, this, [this]() {
+        QMessageBox::about(this, "关于",
+                          "<h3>网络联机五子棋客户端</h3>"
+                          "<p>版本: 1.0.0</p>"
+                          "<p>基于Qt 5.15.2和C++11开发</p>"
+                          "<p>© 2024 Gomoku Project</p>");
+    });
 
     qDebug() << "UI initialized";
 }
