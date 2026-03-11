@@ -53,14 +53,15 @@ int main(int argc, char* argv[]) {
     std::signal(SIGTERM, signalHandler);
     
     // 初始化日志系统
-    Logger::initialize("logs/server.log", Logger::LogLevel::INFO);
+    Logger::getInstance().setLogFile("logs/server.log");
+    Logger::getInstance().setLevel(LogLevel::INFO);
     
     LOG_INFO("========================================");
     LOG_INFO("  Gomoku Game Server");
     LOG_INFO("========================================");
     
     // 创建服务器
-    g_server = std::make_unique<GameServer>();
+    g_server.reset(new GameServer());
     
     // 加载配置
     if (!g_server->loadConfig(configFile)) {

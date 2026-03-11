@@ -47,7 +47,7 @@ bool ChatManager::sendLobbyChat(int senderId, const std::string& content) {
     long long timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
     
-    saveMessage(ChatType::LOBBY, "lobby", senderId, senderInfo.nickname, filteredContent, timestamp);
+    saveMessage(InternalChatType::LOBBY, "lobby", senderId, senderInfo.nickname, filteredContent, timestamp);
     
     // 获取所有在线用户
     auto onlineUsers = userManager_->getOnlineUsers();
@@ -95,8 +95,8 @@ bool ChatManager::sendPrivateChat(int senderId, int receiverId, const std::strin
     std::string key1 = "private:" + std::to_string(senderId) + ":" + std::to_string(receiverId);
     std::string key2 = "private:" + std::to_string(receiverId) + ":" + std::to_string(senderId);
     
-    saveMessage(ChatType::PRIVATE, key1, senderId, senderInfo.nickname, filteredContent, timestamp);
-    saveMessage(ChatType::PRIVATE, key2, senderId, senderInfo.nickname, filteredContent, timestamp);
+    saveMessage(InternalChatType::PRIVATE, key1, senderId, senderInfo.nickname, filteredContent, timestamp);
+    saveMessage(InternalChatType::PRIVATE, key2, senderId, senderInfo.nickname, filteredContent, timestamp);
     
     // 构造消息
     std::string message = formatMessage(senderId, senderInfo.nickname, filteredContent, timestamp);
@@ -135,7 +135,7 @@ bool ChatManager::sendRoomChat(int senderId, const std::string& roomId, const st
     long long timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
     
-    saveMessage(ChatType::ROOM, roomId, senderId, senderInfo.nickname, filteredContent, timestamp);
+    saveMessage(InternalChatType::ROOM, roomId, senderId, senderInfo.nickname, filteredContent, timestamp);
     
     // 获取房间内所有用户
     auto spectators = roomManager_->getSpectators(roomId);
@@ -161,18 +161,18 @@ bool ChatManager::sendRoomChat(int senderId, const std::string& roomId, const st
     return true;
 }
 
-std::vector<std::string> ChatManager::getHistory(ChatType type, const std::string& id, int limit) {
+std::vector<std::string> ChatManager::getHistory(InternalChatType type, const std::string& id, int limit) {
     std::lock_guard<std::mutex> lock(mutex_);
     
     std::ostringstream key;
     switch (type) {
-        case ChatType::LOBBY:
+        case InternalChatType::LOBBY:
             key << "chat:lobby";
             break;
-        case ChatType::ROOM:
+        case InternalChatType::ROOM:
             key << "chat:room:" << id;
             break;
-        case ChatType::PRIVATE:
+        case InternalChatType::PRIVATE:
             key << "chat:private:" << id;
             break;
     }
@@ -200,17 +200,17 @@ std::string ChatManager::filterSensitiveWords(const std::string& content) {
     return filtered;
 }
 
-bool ChatManager::saveMessage(ChatType type, const std::string& id, int senderId, const std::string& senderName,
+bool ChatManager::saveMessage(InternalChatType type, const std::string& id, int senderId, const std::string& senderName,
                                const std::string& content, long long timestamp) {
     std::ostringstream key;
     switch (type) {
-        case ChatType::LOBBY:
+        case InternalChatType::LOBBY:
             key << "chat:lobby";
             break;
-        case ChatType::ROOM:
+        case InternalChatType::ROOM:
             key << "chat:room:" << id;
             break;
-        case ChatType::PRIVATE:
+        case InternalChatType::PRIVATE:
             key << "chat:private:" << id;
             break;
     }

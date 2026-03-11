@@ -314,7 +314,7 @@ MySQLClient::ConnectionPtr MySQLClient::getConnection() {
     }
     
     auto conn = pool_.front();
-    pool_.pop_front();
+    pool_.erase(pool_.begin());
     return conn;
 }
 

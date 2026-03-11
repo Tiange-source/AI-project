@@ -11,6 +11,10 @@
 
 namespace gomoku {
 
+// 前向声明
+class TcpConnection;
+using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
+
 class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 public:
     using ConnectionCallback = std::function<void(const std::shared_ptr<TcpConnection>&)>;
@@ -64,7 +68,8 @@ public:
     Buffer* outputBuffer();
 
 private:
-    enum StateE state();
+    StateE state();
+    void setState(StateE s);
 
     void handleRead();
     void handleWrite();

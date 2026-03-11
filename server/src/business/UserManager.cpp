@@ -27,11 +27,11 @@ bool UserManager::initialize(MySQLClient* mysql, RedisClient* redis) {
 }
 
 int UserManager::login(const std::string& username, const std::string& password, 
-                       UserInfo& userInfo, std::string& token) {
+                       InternalUserInfo& userInfo, std::string& token) {
     std::lock_guard<std::mutex> lock(mutex_);
     
     // 从数据库查询用户
-    UserInfo info;
+    InternalUserInfo info;
     if (!loadUserFromDB(username, info)) {
         LOG_WARN("UserManager::login - user not found: " + username);
         return -1;
@@ -64,11 +64,11 @@ int UserManager::login(const std::string& username, const std::string& password,
 
 int UserManager::registerUser(const std::string& username, const std::string& password,
                               const std::string& email, const std::string& nickname,
-                              UserInfo& userInfo) {
+                              InternalUserInfo& userInfo) {
     std::lock_guard<std::mutex> lock(mutex_);
     
     // 检查用户名是否已存在
-    UserInfo existingUser;
+    InternalUserInfo existingUser;
     if (loadUserFromDB(username, existingUser)) {
         LOG_WARN("UserManager::registerUser - username already exists: " + username);
         return -1;
@@ -112,7 +112,7 @@ bool UserManager::logout(int userId, const std::string& token) {
     return true;
 }
 
-void UserManager::addOnlineUser(int userId, const UserInfo& info, const std::string& token) {
+void UserManager::addOnlineUser(int userId, const InternalUserInfo& info, const std::string& token) {
     onlineUsers_[userId] = info;
     userTokens_[userId] = token;
     
@@ -136,7 +136,7 @@ void UserManager::removeOnlineUser(int userId) {
     redis_->srem("online_users", std::to_string(userId));
 }
 
-bool UserManager::getUserInfo(int userId, UserInfo& info) {
+bool UserManager::getUserInfo(int userId, InternalUserInfo& info) {
     std::lock_guard<std::mutex> lock(mutex_);
     
     // 先从本地缓存查找
@@ -155,7 +155,7 @@ bool UserManager::getUserInfo(int userId, UserInfo& info) {
     return loadUserFromDB(userId, info);
 }
 
-bool UserManager::updateUserInfo(const UserInfo& info) {
+bool UserManager::updateUserInfo(const InternalUserInfo& info) {
     std::lock_guard<std::mutex> lock(mutex_);
     
     // 更新数据库
@@ -202,7 +202,7 @@ int UserManager::getUserIdByToken(const std::string& token) {
 bool UserManager::updateStats(int userId, bool isWin, int steps) {
     std::lock_guard<std::mutex> lock(mutex_);
     
-    UserInfo info;
+    InternalUserInfo info;
     if (!getUserInfo(userId, info)) {
         return false;
     }
@@ -232,10 +232,10 @@ bool UserManager::updateStats(int userId, bool isWin, int steps) {
     return mysql_->execute(sql.str()) > 0;
 }
 
-std::vector<UserInfo> UserManager::getOnlineUsers() {
+std::vector<InternalUserInfo> UserManager::getOnlineUsers() {
     std::lock_guard<std::mutex> lock(mutex_);
     
-    std::vector<UserInfo> users;
+    std::vector<InternalUserInfo> users;
     for (const auto& pair : onlineUsers_) {
         users.push_back(pair.second);
     }
@@ -271,7 +271,7 @@ std::string UserManager::generateToken(int userId) {
     return ss.str();
 }
 
-bool UserManager::loadUserFromDB(int userId, UserInfo& info) {
+bool UserManager::loadUserFromDB(int userId, InternalUserInfo& info) {
     std::ostringstream sql;
     sql << "SELECT user_id, username, nickname, avatar_url, win_count, lose_count, "
         << "draw_count, rating, total_games FROM users WHERE user_id = " << userId;
@@ -297,7 +297,7 @@ bool UserManager::loadUserFromDB(int userId, UserInfo& info) {
     return false;
 }
 
-bool UserManager::loadUserFromDB(const std::string& username, UserInfo& info) {
+bool UserManager::loadUserFromDB(const std::string& username, InternalUserInfo& info) {
     std::ostringstream sql;
     sql << "SELECT user_id, username, nickname, avatar_url, win_count, lose_count, "
         << "draw_count, rating, total_games FROM users WHERE username = '" << username << "'";
@@ -323,7 +323,7 @@ bool UserManager::loadUserFromDB(const std::string& username, UserInfo& info) {
     return false;
 }
 
-bool UserManager::saveUserToDB(const UserInfo& info) {
+bool UserManager::saveUserToDB(const InternalUserInfo& info) {
     std::ostringstream sql;
     sql << "UPDATE users SET nickname = '" << info.nickname
         << "', avatar_url = '" << info.avatarUrl
@@ -337,7 +337,7 @@ bool UserManager::saveUserToDB(const UserInfo& info) {
     return mysql_->execute(sql.str()) > 0;
 }
 
-void UserManager::cacheUserToRedis(int userId, const UserInfo& info) {
+void UserManager::cacheUserToRedis(int userId, const InternalUserInfo& info) {
     if (!redis_) return;
     
     std::ostringstream key;
@@ -358,7 +358,7 @@ void UserManager::cacheUserToRedis(int userId, const UserInfo& info) {
     redis_->expire(key.str(), 3600); // 1小时
 }
 
-bool UserManager::getUserFromRedis(int userId, UserInfo& info) {
+bool UserManager::getUserFromRedis(int userId, InternalUserInfo& info) {
     if (!redis_) return false;
     
     std::ostringstream key;

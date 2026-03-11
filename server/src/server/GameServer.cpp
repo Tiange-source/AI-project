@@ -70,47 +70,47 @@ bool GameServer::loadConfig(const std::string& configFile) {
 
 bool GameServer::initialize() {
     // 初始化MySQL客户端
-    mysqlClient_ = std::make_unique<MySQLClient>();
+    mysqlClient_.reset(new MySQLClient());
     if (!mysqlClient_->connect(mysqlHost_, mysqlPort_, mysqlUser_, mysqlPassword_, mysqlDatabase_)) {
         LOG_ERROR("GameServer::initialize - failed to connect to MySQL");
         return false;
     }
     
     // 初始化Redis客户端
-    redisClient_ = std::make_unique<RedisClient>();
+    redisClient_.reset(new RedisClient());
     if (!redisClient_->connect(redisHost_, redisPort_)) {
         LOG_ERROR("GameServer::initialize - failed to connect to Redis");
         return false;
     }
     
     // 初始化业务层
-    userManager_ = std::make_unique<UserManager>();
+    userManager_.reset(new UserManager());
     if (!userManager_->initialize(mysqlClient_.get(), redisClient_.get())) {
         LOG_ERROR("GameServer::initialize - failed to initialize UserManager");
         return false;
     }
     
-    roomManager_ = std::make_unique<RoomManager>();
+    roomManager_.reset(new RoomManager());
     if (!roomManager_->initialize(redisClient_.get(), userManager_.get())) {
         LOG_ERROR("GameServer::initialize - failed to initialize RoomManager");
         return false;
     }
     
-    gameController_ = std::make_unique<GameController>();
+    gameController_.reset(new GameController());
     
-    matchManager_ = std::make_unique<MatchManager>();
+    matchManager_.reset(new MatchManager());
     if (!matchManager_->initialize(redisClient_.get(), userManager_.get(), roomManager_.get())) {
         LOG_ERROR("GameServer::initialize - failed to initialize MatchManager");
         return false;
     }
     
-    chatManager_ = std::make_unique<ChatManager>();
+    chatManager_.reset(new ChatManager());
     if (!chatManager_->initialize(redisClient_.get(), userManager_.get(), roomManager_.get())) {
         LOG_ERROR("GameServer::initialize - failed to initialize ChatManager");
         return false;
     }
     
-    spectatorManager_ = std::make_unique<SpectatorManager>();
+    spectatorManager_.reset(new SpectatorManager());
     if (!spectatorManager_->initialize(redisClient_.get(), userManager_.get(), roomManager_.get())) {
         LOG_ERROR("GameServer::initialize - failed to initialize SpectatorManager");
         return false;
@@ -126,13 +126,13 @@ bool GameServer::initialize() {
     chatManager_->setBroadcastCallback(broadcastCb);
     
     // 初始化消息分发器
-    messageDispatcher_ = std::make_unique<MessageDispatcher>();
+    messageDispatcher_.reset(new MessageDispatcher());
     
     // 注册消息处理器
     // 这里简化处理，实际应该为每个消息类型注册处理器
     
     // 创建Acceptor
-    acceptor_ = std::make_unique<Acceptor>(&eventLoop_, port_);
+    acceptor_.reset(new Acceptor(&eventLoop_, port_));
     acceptor_->setNewConnectionCallback(
         [this](int sockfd, const std::string& peerIp, uint16_t peerPort) {
             this->onNewConnection(sockfd, peerIp, peerPort);

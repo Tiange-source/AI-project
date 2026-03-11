@@ -54,7 +54,7 @@ bool GameController::makeMove(int row, int col, int playerId) {
     board_[row][col] = playerId;
     
     // 记录落子
-    Move move;
+    InternalMove move;
     move.row = row;
     move.col = col;
     move.playerId = playerId;
@@ -121,7 +121,7 @@ void GameController::switchPlayer() {
     currentPlayer_ = (currentPlayer_ == 1) ? 2 : 1;
 }
 
-const std::vector<Move>& GameController::getMoveHistory() const {
+const std::vector<InternalMove>& GameController::getMoveHistory() const {
     return moveHistory_;
 }
 
@@ -133,7 +133,7 @@ bool GameController::undoMove() {
     }
     
     // 撤销最后一步
-    Move lastMove = moveHistory_.back();
+    InternalMove lastMove = moveHistory_.back();
     board_[lastMove.row][lastMove.col] = 0;
     moveHistory_.pop_back();
     

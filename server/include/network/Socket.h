@@ -29,6 +29,9 @@ public:
     void setReuseAddr(bool on);
     void setReusePort(bool on);
     void setKeepAlive(bool on);
+    
+    // 关闭写端
+    void shutdownWrite();
 
 private:
     int sockfd_;

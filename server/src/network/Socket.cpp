@@ -78,4 +78,8 @@ void Socket::setKeepAlive(bool on) {
     ::setsockopt(sockfd_, SOL_SOCKET, SO_KEEPALIVE, &optval, static_cast<socklen_t>(sizeof(optval)));
 }
 
+void Socket::shutdownWrite() {
+    ::shutdown(sockfd_, SHUT_WR);
+}
+
 } // namespace gomoku

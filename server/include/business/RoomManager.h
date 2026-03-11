@@ -11,19 +11,19 @@
 
 namespace gomoku {
 
-enum class RoomState {
+enum class InternalRoomState {
     WAITING,
     GAMING,
     FINISHED
 };
 
-struct RoomInfo {
+struct InternalRoomInfo {
     std::string roomId;
     std::string roomName;
     int ownerId;
     std::string password;
     bool hasPassword;
-    RoomState state;
+    InternalRoomState state;
     int player1;
     int player2;
     std::vector<int> spectators;
@@ -46,11 +46,11 @@ public:
     
     // 创建房间
     bool createRoom(int ownerId, const std::string& roomName, const std::string& password, 
-                    RoomInfo& roomInfo);
+                    InternalRoomInfo& roomInfo);
     
     // 加入房间
     bool joinRoom(int userId, const std::string& roomId, const std::string& password, 
-                  RoomInfo& roomInfo);
+                  InternalRoomInfo& roomInfo);
     
     // 离开房间
     bool leaveRoom(int userId, const std::string& roomId);
@@ -59,10 +59,10 @@ public:
     bool closeRoom(const std::string& roomId);
     
     // 获取房间信息
-    bool getRoomInfo(const std::string& roomId, RoomInfo& roomInfo);
+    bool getRoomInfo(const std::string& roomId, InternalRoomInfo& roomInfo);
     
     // 获取活跃房间列表
-    std::vector<RoomInfo> getActiveRooms();
+    std::vector<InternalRoomInfo> getActiveRooms();
     
     // 检查房间是否已满
     bool isRoomFull(const std::string& roomId);
@@ -74,7 +74,7 @@ public:
     bool startGame(const std::string& roomId);
     
     // 更新房间状态
-    bool updateRoomState(const std::string& roomId, RoomState state);
+    bool updateRoomState(const std::string& roomId, InternalRoomState state);
     
     // 添加观战者
     bool addSpectator(const std::string& roomId, int userId);
@@ -93,10 +93,10 @@ public:
 
 private:
     // 从Redis加载房间信息
-    bool loadRoomFromRedis(const std::string& roomId, RoomInfo& roomInfo);
+    bool loadRoomFromRedis(const std::string& roomId, InternalRoomInfo& roomInfo);
     
     // 保存房间信息到Redis
-    bool saveRoomToRedis(const RoomInfo& roomInfo);
+    bool saveRoomToRedis(const InternalRoomInfo& roomInfo);
     
     // 从Redis移除房间
     bool removeRoomFromRedis(const std::string& roomId);
@@ -113,7 +113,7 @@ private:
     BroadcastCallback broadcastCallback_;
     
     // 本地房间缓存
-    std::map<std::string, RoomInfo> rooms_;
+    std::map<std::string, InternalRoomInfo> rooms_;
 };
 
 } // namespace gomoku

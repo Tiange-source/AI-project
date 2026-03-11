@@ -34,6 +34,9 @@ public:
     void setErrorCallback(const EventCallback& cb);
     void setCloseCallback(const EventCallback& cb);
     
+    // 绑定对象（用于延长生命周期）
+    void tie(const std::shared_ptr<void>& obj);
+    
     // 启用/禁用事件
     void enableReading();
     void disableReading();
@@ -76,6 +79,9 @@ private:
     EventCallback writeCallback_;
     EventCallback errorCallback_;
     EventCallback closeCallback_;
+    
+    std::weak_ptr<void> tie_;
+    bool tied_;
 };
 
 } // namespace gomoku

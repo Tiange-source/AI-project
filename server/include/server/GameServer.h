@@ -14,6 +14,7 @@
 #include "business/ChatManager.h"
 #include "business/SpectatorManager.h"
 #include "protocol/ProtobufCodec.h"
+#include "protocol/MessageDispatcher.h"
 #include "gomoku.pb.h"
 #include <string>
 #include <unordered_map>
@@ -21,6 +22,9 @@
 #include <functional>
 
 namespace gomoku {
+
+// 前向声明
+using ProtobufMessagePtr = std::shared_ptr<google::protobuf::Message>;
 
 class GameServer {
 public:

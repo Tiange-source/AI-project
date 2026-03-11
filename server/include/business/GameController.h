@@ -7,7 +7,7 @@
 
 namespace gomoku {
 
-struct Move {
+struct InternalMove {
     int row;
     int col;
     int playerId;
@@ -50,7 +50,7 @@ public:
     void switchPlayer();
     
     // 获取落子历史
-    const std::vector<Move>& getMoveHistory() const;
+    const std::vector<InternalMove>& getMoveHistory() const;
     
     // 悔棋
     bool undoMove();
@@ -73,7 +73,7 @@ private:
 
     std::vector<std::vector<int>> board_;
     int currentPlayer_;
-    std::vector<Move> moveHistory_;
+    std::vector<InternalMove> moveHistory_;
     bool gameOver_;
     int winner_;
     std::recursive_mutex mutex_;

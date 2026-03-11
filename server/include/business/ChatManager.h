@@ -9,7 +9,7 @@
 
 namespace gomoku {
 
-enum class ChatType {
+enum class InternalChatType {
     LOBBY,
     PRIVATE,
     ROOM
@@ -38,14 +38,14 @@ public:
     bool sendRoomChat(int senderId, const std::string& roomId, const std::string& content);
     
     // 获取聊天历史
-    std::vector<std::string> getHistory(ChatType type, const std::string& id, int limit = 50);
+    std::vector<std::string> getHistory(InternalChatType type, const std::string& id, int limit = 50);
     
     // 敏感词过滤
     std::string filterSensitiveWords(const std::string& content);
 
 private:
     // 保存消息到Redis
-    bool saveMessage(ChatType type, const std::string& id, int senderId, const std::string& senderName, 
+    bool saveMessage(InternalChatType type, const std::string& id, int senderId, const std::string& senderName, 
                      const std::string& content, long long timestamp);
     
     // 格式化消息

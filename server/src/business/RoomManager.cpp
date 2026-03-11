@@ -30,20 +30,20 @@ void RoomManager::setBroadcastCallback(const BroadcastCallback& cb) {
 }
 
 bool RoomManager::createRoom(int ownerId, const std::string& roomName, const std::string& password, 
-                              RoomInfo& roomInfo) {
+                              InternalRoomInfo& roomInfo) {
     std::lock_guard<std::mutex> lock(mutex_);
     
     // 生成房间号
     std::string roomId = generateRoomId();
     
     // 创建房间信息
-    RoomInfo info;
+    InternalRoomInfo info;
     info.roomId = roomId;
     info.roomName = roomName;
     info.ownerId = ownerId;
     info.password = password;
     info.hasPassword = !password.empty();
-    info.state = RoomState::WAITING;
+    info.state = InternalRoomState::WAITING;
     info.player1 = ownerId;
     info.player2 = 0;
     info.spectators.clear();
@@ -79,18 +79,18 @@ bool RoomManager::createRoom(int ownerId, const std::string& roomName, const std
 }
 
 bool RoomManager::joinRoom(int userId, const std::string& roomId, const std::string& password, 
-                           RoomInfo& roomInfo) {
+                           InternalRoomInfo& roomInfo) {
     std::lock_guard<std::mutex> lock(mutex_);
     
     // 加载房间信息
-    RoomInfo info;
+    InternalRoomInfo info;
     if (!getRoomInfo(roomId, info)) {
         LOG_WARN("RoomManager::joinRoom - room not found: " + roomId);
         return false;
     }
     
     // 检查房间状态
-    if (info.state != RoomState::WAITING) {
+    if (info.state != InternalRoomState::WAITING) {
         LOG_WARN("RoomManager::joinRoom - room is not waiting: " + roomId);
         return false;
     }
@@ -142,7 +142,7 @@ bool RoomManager::joinRoom(int userId, const std::string& roomId, const std::str
 bool RoomManager::leaveRoom(int userId, const std::string& roomId) {
     std::lock_guard<std::mutex> lock(mutex_);
     
-    RoomInfo info;
+    InternalRoomInfo info;
     if (!getRoomInfo(roomId, info)) {
         return false;
     }
@@ -202,7 +202,7 @@ bool RoomManager::closeRoom(const std::string& roomId) {
     return true;
 }
 
-bool RoomManager::getRoomInfo(const std::string& roomId, RoomInfo& roomInfo) {
+bool RoomManager::getRoomInfo(const std::string& roomId, InternalRoomInfo& roomInfo) {
     std::lock_guard<std::mutex> lock(mutex_);
     
     // 先从本地缓存查找
@@ -216,16 +216,16 @@ bool RoomManager::getRoomInfo(const std::string& roomId, RoomInfo& roomInfo) {
     return loadRoomFromRedis(roomId, roomInfo);
 }
 
-std::vector<RoomInfo> RoomManager::getActiveRooms() {
+std::vector<InternalRoomInfo> RoomManager::getActiveRooms() {
     std::lock_guard<std::mutex> lock(mutex_);
     
-    std::vector<RoomInfo> rooms;
+    std::vector<InternalRoomInfo> rooms;
     
     // 从Redis获取所有活跃房间
     auto roomIds = redis_->smembers("rooms:active");
     
     for (const auto& roomId : roomIds) {
-        RoomInfo info;
+        InternalRoomInfo info;
         if (loadRoomFromRedis(roomId, info)) {
             rooms.push_back(info);
         }
@@ -235,7 +235,7 @@ std::vector<RoomInfo> RoomManager::getActiveRooms() {
 }
 
 bool RoomManager::isRoomFull(const std::string& roomId) {
-    RoomInfo info;
+    InternalRoomInfo info;
     if (!getRoomInfo(roomId, info)) {
         return false;
     }
@@ -244,23 +244,23 @@ bool RoomManager::isRoomFull(const std::string& roomId) {
 }
 
 bool RoomManager::isRoomGaming(const std::string& roomId) {
-    RoomInfo info;
+    InternalRoomInfo info;
     if (!getRoomInfo(roomId, info)) {
         return false;
     }
     
-    return info.state == RoomState::GAMING;
+    return info.state == InternalRoomState::GAMING;
 }
 
 bool RoomManager::startGame(const std::string& roomId) {
     std::lock_guard<std::mutex> lock(mutex_);
     
-    RoomInfo info;
+    InternalRoomInfo info;
     if (!getRoomInfo(roomId, info)) {
         return false;
     }
     
-    if (info.state != RoomState::WAITING) {
+    if (info.state != InternalRoomState::WAITING) {
         return false;
     }
     
@@ -268,7 +268,7 @@ bool RoomManager::startGame(const std::string& roomId) {
         return false;
     }
     
-    info.state = RoomState::GAMING;
+    info.state = InternalRoomState::GAMING;
     info.startTime = std::time(nullptr);
     
     saveRoomToRedis(info);
@@ -278,10 +278,10 @@ bool RoomManager::startGame(const std::string& roomId) {
     return true;
 }
 
-bool RoomManager::updateRoomState(const std::string& roomId, RoomState state) {
+bool RoomManager::updateRoomState(const std::string& roomId, InternalRoomState state) {
     std::lock_guard<std::mutex> lock(mutex_);
     
-    RoomInfo info;
+    InternalRoomInfo info;
     if (!getRoomInfo(roomId, info)) {
         return false;
     }
@@ -297,7 +297,7 @@ bool RoomManager::updateRoomState(const std::string& roomId, RoomState state) {
 bool RoomManager::addSpectator(const std::string& roomId, int userId) {
     std::lock_guard<std::mutex> lock(mutex_);
     
-    RoomInfo info;
+    InternalRoomInfo info;
     if (!getRoomInfo(roomId, info)) {
         return false;
     }
@@ -323,7 +323,7 @@ bool RoomManager::addSpectator(const std::string& roomId, int userId) {
 bool RoomManager::removeSpectator(const std::string& roomId, int userId) {
     std::lock_guard<std::mutex> lock(mutex_);
     
-    RoomInfo info;
+    InternalRoomInfo info;
     if (!getRoomInfo(roomId, info)) {
         return false;
     }
@@ -349,7 +349,7 @@ bool RoomManager::removeSpectator(const std::string& roomId, int userId) {
 std::vector<int> RoomManager::getSpectators(const std::string& roomId) {
     std::lock_guard<std::mutex> lock(mutex_);
     
-    RoomInfo info;
+    InternalRoomInfo info;
     if (!getRoomInfo(roomId, info)) {
         return {};
     }
@@ -381,7 +381,7 @@ std::string RoomManager::generateRoomId() {
     do {
         roomId = std::to_string(dis(gen));
         // 检查房间号是否已存在
-        RoomInfo info;
+        InternalRoomInfo info;
         if (!getRoomInfo(roomId, info)) {
             break;
         }
@@ -390,7 +390,7 @@ std::string RoomManager::generateRoomId() {
     return roomId;
 }
 
-bool RoomManager::loadRoomFromRedis(const std::string& roomId, RoomInfo& roomInfo) {
+bool RoomManager::loadRoomFromRedis(const std::string& roomId, InternalRoomInfo& roomInfo) {
     std::ostringstream key;
     key << "room:" << roomId;
     
@@ -409,7 +409,7 @@ bool RoomManager::loadRoomFromRedis(const std::string& roomId, RoomInfo& roomInf
         } else if (pair.first == "password") {
             roomInfo.password = pair.second;
         } else if (pair.first == "state") {
-            roomInfo.state = static_cast<RoomState>(std::stoi(pair.second));
+            roomInfo.state = static_cast<InternalRoomState>(std::stoi(pair.second));
         } else if (pair.first == "player1") {
             roomInfo.player1 = std::stoi(pair.second);
         } else if (pair.first == "player2") {
@@ -434,7 +434,7 @@ bool RoomManager::loadRoomFromRedis(const std::string& roomId, RoomInfo& roomInf
     return true;
 }
 
-bool RoomManager::saveRoomToRedis(const RoomInfo& roomInfo) {
+bool RoomManager::saveRoomToRedis(const InternalRoomInfo& roomInfo) {
     std::ostringstream key;
     key << "room:" << roomInfo.roomId;
     
@@ -485,7 +485,7 @@ bool RoomManager::removeRoomFromRedis(const std::string& roomId) {
 }
 
 bool RoomManager::validatePassword(const std::string& roomId, const std::string& password) {
-    RoomInfo info;
+    InternalRoomInfo info;
     if (!getRoomInfo(roomId, info)) {
         return false;
     }
@@ -496,7 +496,7 @@ bool RoomManager::validatePassword(const std::string& roomId, const std::string&
 std::vector<int> RoomManager::getRoomUsers(const std::string& roomId) {
     std::vector<int> userIds;
     
-    RoomInfo info;
+    InternalRoomInfo info;
     if (!getRoomInfo(roomId, info)) {
         return userIds;
     }

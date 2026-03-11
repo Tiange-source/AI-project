@@ -1,4 +1,6 @@
 #include "network/TcpConnection.h"
+#include <cassert>
+#include <sys/socket.h>
 #include "utils/Logger.h"
 #include <errno.h>
 #include <unistd.h>
