@@ -91,18 +91,8 @@ void MainWindow::initUI()
     QWidget* centralWidget = ui_->centralwidget;
 
     // 连接按钮信号
-    connect(ui_->loginButton, &QPushButton::clicked, this, [this]() {
-        qDebug() << "Login button clicked";
-        showLoginDialog();
-    });
-
-    connect(ui_->registerButton, &QPushButton::clicked, this, [this]() {
-        qDebug() << "Register button clicked";
-        QMessageBox::information(this, "注册", "注册功能待实现");
-    });
-
     connect(ui_->offlineButton, &QPushButton::clicked, this, [this]() {
-        qDebug() << "Offline game button clicked";
+        qDebug() << "Start game button clicked";
         showOfflineGame();
     });
 
@@ -119,8 +109,7 @@ void MainWindow::initUI()
         }
     });
 
-    connect(ui_->actionLogin, &QAction::triggered, ui_->loginButton, &QPushButton::click);
-    connect(ui_->actionRegister, &QAction::triggered, ui_->registerButton, &QPushButton::click);
+    connect(ui_->actionLogin, &QAction::triggered, ui_->offlineButton, &QPushButton::click);
 
     connect(ui_->actionExit, &QAction::triggered, this, &QMainWindow::close);
 

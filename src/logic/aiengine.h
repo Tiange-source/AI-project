@@ -19,7 +19,7 @@ struct AIMove {
 /**
  * @brief AI引擎
  *
- * 提供三种难度的AI对手
+ * 使用五元组方案提供AI对战
  */
 class AIEngine : public QObject
 {
@@ -65,19 +65,44 @@ private:
     AIMove computeEasyMove(const int board[18][18], int aiPlayer);
 
     /**
-     * @brief 中等难度：基于评分
+     * @brief 中等难度：五元组评分
      */
     AIMove computeMediumMove(const int board[18][18], int aiPlayer);
 
     /**
-     * @brief 困难难度：极大极小算法
+     * @brief 困难难度：五元组评分 + 搜索
      */
     AIMove computeHardMove(const int board[18][18], int aiPlayer);
 
     /**
-     * @brief 评估位置分数
+     * @brief 五元组评分
+     * @param board 棋盘
+     * @param row 行号
+     * @param col 列号
+     * @param player 玩家
+     * @return 分数
      */
-    int evaluatePosition(const int board[18][18], int row, int col, int player);
+    int evaluateFiveTuple(const int board[18][18], int row, int col, int player);
+
+    /**
+     * @brief 评估棋盘（五元组方案）
+     * @param board 棋盘
+     * @param player 玩家
+     * @return 分数
+     */
+    int evaluateBoardFiveTuple(const int board[18][18], int player);
+
+    /**
+     * @brief 检查某个方向上的五元组
+     * @param board 棋盘
+     * @param row 起始行
+     * @param col 起始列
+     * @param dx 行方向
+     * @param dy 列方向
+     * @param player 玩家
+     * @return 五元组类型和分数
+     */
+    QPair<int, int> checkLine(const int board[18][18], int row, int col, int dx, int dy, int player);
 
     /**
      * @brief 获取有效落子位置
@@ -85,19 +110,14 @@ private:
     QVector<AIMove> getValidMoves(const int board[18][18]);
 
     /**
-     * @brief 极大极小算法
+     * @brief 极大极小算法（带五元组评估）
      */
     int minimax(int board[18][18], int depth, bool maximizing, int alpha, int beta, int player);
 
     /**
-     * @brief 评估棋盘
-     */
-    int evaluateBoard(const int board[18][18], int player);
-
-    /**
      * @brief 检查五子连珠
      */
-    int checkFiveInRow(const int board[18][18], int row, int col, int player);
+    bool checkFiveInRow(const int board[18][18], int row, int col, int player);
 
     /**
      * @brief 检查位置是否有效
@@ -111,7 +131,17 @@ private:
 
 private:
     int difficulty_;
-    static const int SEARCH_DEPTH = 4;
+    static const int SEARCH_DEPTH = 3;
+
+    // 五元组评分权重
+    static const int SCORE_FIVE = 100000;        // 五连
+    static const int SCORE_LIVE_FOUR = 10000;   // 活四
+    static const int SCORE_DEAD_FOUR = 1000;    // 死四
+    static const int SCORE_LIVE_THREE = 1000;   // 活三
+    static const int SCORE_DEAD_THREE = 100;    // 死三
+    static const int SCORE_LIVE_TWO = 100;      // 活二
+    static const int SCORE_DEAD_TWO = 10;       // 死二
+    static const int SCORE_ONE = 1;             // 单子
 };
 
 #endif // AIENGINE_H
