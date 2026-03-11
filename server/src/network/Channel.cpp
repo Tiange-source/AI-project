@@ -1,6 +1,7 @@
 #include "network/Channel.h"
 #include "network/EventLoop.h"
 #include "utils/Logger.h"
+#include <sys/epoll.h>
 
 namespace gomoku {
 
@@ -122,6 +123,11 @@ void Channel::setIndex(int idx) {
 
 EventLoop* Channel::ownerLoop() {
     return loop_;
+}
+
+void Channel::remove() {
+    disableAll();
+    loop_->removeChannel(this);
 }
 
 void Channel::update() {

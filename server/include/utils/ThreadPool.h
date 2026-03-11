@@ -40,7 +40,7 @@ private:
     std::vector<std::thread> workers_;
     std::queue<Task> tasks_;
     
-    std::mutex queueMutex_;
+    mutable std::mutex queueMutex_;
     std::condition_variable condition_;
     std::atomic<bool> stop_;
 };

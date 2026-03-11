@@ -1,10 +1,12 @@
 #include "network/Socket.h"
 #include "utils/Logger.h"
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <errno.h>
+#include <cstring>
+#include <cerrno>
 
 namespace gomoku {
 

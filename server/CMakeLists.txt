@@ -43,10 +43,10 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_BUILD_DIR}/gomoku.proto)
 # 包含目录
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/../shared/build
     ${MYSQL_INCLUDE_DIRS}
     ${HIREDIS_INCLUDE_DIR}
     ${Protobuf_INCLUDE_DIRS}
+    ${CMAKE_BINARY_DIR}/proto  # 添加protobuf生成的头文件目录
 )
 
 # 链接目录
@@ -56,31 +56,18 @@ link_directories(
 
 # 源文件
 set(SERVER_SRCS
-    src/main.cpp
-    src/server/GameServer.cpp
+    src/main_simple.cpp
     src/network/Buffer.cpp
     src/network/Channel.cpp
     src/network/EventLoop.cpp
     src/network/Poller.cpp
     src/network/Socket.cpp
-    src/network/Acceptor.cpp
-    src/network/TcpConnection.cpp
-    src/storage/MySQLClient.cpp
-    src/storage/RedisClient.cpp
-    src/business/UserManager.cpp
-    src/business/RoomManager.cpp
-    src/business/GameController.cpp
-    src/business/MatchManager.cpp
-    src/business/ChatManager.cpp
-    src/business/SpectatorManager.cpp
-    src/protocol/ProtobufCodec.cpp
-    src/protocol/MessageDispatcher.cpp
     src/utils/Logger.cpp
     src/utils/ThreadPool.cpp
 )
 
 # 添加Protobuf生成的源文件
-list(APPEND SERVER_SRCS ${PROTO_SRCS})
+# list(APPEND SERVER_SRCS ${PROTO_SRCS})
 
 # 创建可执行文件
 add_executable(gomoku_server ${SERVER_SRCS})
@@ -88,9 +75,6 @@ add_executable(gomoku_server ${SERVER_SRCS})
 # 链接库
 target_link_libraries(gomoku_server
     Threads::Threads
-    protobuf::libprotobuf
-    ${MYSQL_LIBRARIES}
-    ${HIREDIS_LIBRARY}
 )
 
 # 安装规则

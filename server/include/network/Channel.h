@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <memory>
+#include <sys/epoll.h>
 
 namespace gomoku {
 
@@ -11,6 +12,11 @@ class EventLoop;
 class Channel {
 public:
     using EventCallback = std::function<void()>;
+    
+    // 事件类型常量
+    static const int kNoneEvent;
+    static const int kReadEvent;
+    static const int kWriteEvent;
     
     Channel(EventLoop* loop, int fd);
     ~Channel();
@@ -53,6 +59,9 @@ public:
     
     // 获取EventLoop
     EventLoop* ownerLoop();
+    
+    // 移除Channel
+    void remove();
 
 private:
     void update();

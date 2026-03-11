@@ -6,6 +6,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <cassert>
+#include <algorithm>
+#include <chrono>
 
 namespace gomoku {
 
@@ -45,7 +48,8 @@ void EventLoop::loop() {
     
     while (!quit_) {
         activeChannels_.clear();
-        pollReturnTime_ = poller_->poll(10000, activeChannels_);
+        int numEvents = poller_->poll(10000, activeChannels_);
+        pollReturnTime_ = std::chrono::system_clock::now();
         
         ++iteration_;
         eventHandling_ = true;
@@ -90,11 +94,18 @@ bool EventLoop::isInLoopThread() const {
     return threadId_ == std::this_thread::get_id();
 }
 
+void EventLoop::assertInLoopThread() {
+    if (!isInLoopThread()) {
+        abortNotInLoopThread();
+    }
+}
+
 void EventLoop::abortNotInLoopThread() {
+    std::hash<std::thread::id> hash_fn;
     LOG_ERROR("EventLoop::abortNotInLoopThread - EventLoop was created in thread " + 
-              std::to_string(reinterpret_cast<uintptr_t>(&threadId_)) + 
+              std::to_string(hash_fn(threadId_)) + 
               ", current thread is " + 
-              std::to_string(reinterpret_cast<uintptr_t>(std::this_thread::get_id())));
+              std::to_string(hash_fn(std::this_thread::get_id())));
 }
 
 void EventLoop::runInLoop(Functor cb) {

@@ -39,6 +39,9 @@ public:
     // 判断是否在当前线程
     bool isInLoopThread() const;
     
+    // 断言在当前线程
+    void assertInLoopThread();
+    
     // 在I/O线程执行任务
     void runInLoop(Functor cb);
     
@@ -69,6 +72,10 @@ private:
     std::mutex mutex_;
     std::vector<Functor> pendingFunctors_;
     std::atomic<bool> callingPendingFunctors_;
+    
+    // 添加缺失的成员变量
+    std::chrono::system_clock::time_point pollReturnTime_;
+    int iteration_;
 };
 
 } // namespace gomoku
