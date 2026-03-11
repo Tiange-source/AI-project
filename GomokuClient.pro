@@ -36,9 +36,13 @@ SOURCES += \
     $$SRC_DIR/main.cpp \
     $$SRC_DIR/mainwindow.cpp \
     $$SRC_DIR/ui/titlebar.cpp \
+    $$SRC_DIR/ui/logindialog.cpp \
+    $$SRC_DIR/ui/boardwidget.cpp \
     $$SRC_DIR/network/tcpclient.cpp \
     $$SRC_DIR/network/protobufcodec.cpp \
     $$SRC_DIR/network/messagedispatcher.cpp \
+    $$SRC_DIR/logic/gamecontroller.cpp \
+    $$SRC_DIR/logic/aiengine.cpp \
     $$SRC_DIR/data/userprofile.cpp \
     $$SRC_DIR/data/roominfo.cpp
 
@@ -46,9 +50,13 @@ SOURCES += \
 HEADERS += \
     $$SRC_DIR/mainwindow.h \
     $$SRC_DIR/ui/titlebar.h \
+    $$SRC_DIR/ui/logindialog.h \
+    $$SRC_DIR/ui/boardwidget.h \
     $$SRC_DIR/network/tcpclient.h \
     $$SRC_DIR/network/protobufcodec.h \
     $$SRC_DIR/network/messagedispatcher.h \
+    $$SRC_DIR/logic/gamecontroller.h \
+    $$SRC_DIR/logic/aiengine.h \
     $$SRC_DIR/data/userprofile.h \
     $$SRC_DIR/data/roominfo.h
 

@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QDebug>
 #include <QMessageBox>
+#include <QStyle>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -10,6 +11,8 @@ MainWindow::MainWindow(QWidget* parent)
     , dispatcher_(nullptr)
     , userProfile_(UserProfile::create())
     , titleBar_(nullptr)
+    , gameController_(new GameController(this))
+    , aiEngine_(new AIEngine(this))
 {
     // 设置无边框窗口
     setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
@@ -89,21 +92,18 @@ void MainWindow::initUI()
     // 连接按钮信号
     connect(ui_->loginButton, &QPushButton::clicked, this, [this]() {
         qDebug() << "Login button clicked";
-        // TODO: 显示登录对话框
-        QMessageBox::information(this, "登录", "登录功能待实现");
+        showLoginDialog();
     });
 
     connect(ui_->registerButton, &QPushButton::clicked, this, [this]() {
         qDebug() << "Register button clicked";
-        // TODO: 显示注册对话框
         QMessageBox::information(this, "注册", "注册功能待实现");
     });
 
     // 连接菜单动作
     connect(ui_->actionConnect, &QAction::triggered, this, [this]() {
         qDebug() << "Connect to server";
-        // TODO: 连接到服务器
-        QMessageBox::information(this, "连接服务器", "连接功能待实现");
+        connectToServer();
     });
 
     connect(ui_->actionDisconnect, &QAction::triggered, this, [this]() {
@@ -125,6 +125,14 @@ void MainWindow::initUI()
                           "<p>基于Qt 5.15.2和C++11开发</p>"
                           "<p>© 2024 Gomoku Project</p>");
     });
+
+    // 检查是否有保存的用户信息
+    if (userProfile_->isLoggedIn()) {
+        ui_->welcomeLabel->setText("欢迎回来, " + userProfile_->getUsername() + "!");
+    }
+
+    // 更新连接状态
+    updateConnectionStatus();
 
     qDebug() << "UI initialized";
 }
@@ -234,4 +242,38 @@ void MainWindow::onConnectionError(const QString& error)
 {
     qDebug() << "Connection error:" << error;
     QMessageBox::critical(this, "连接错误", "连接服务器失败: " + error);
+    updateConnectionStatus();
+}
+
+void MainWindow::showLoginDialog()
+{
+    qDebug() << "Show login dialog";
+    // TODO: 实现登录对话框
+    QMessageBox::information(this, "登录", "登录对话框即将实现");
+}
+
+void MainWindow::connectToServer()
+{
+    if (tcpClient_->isConnected()) {
+        QMessageBox::information(this, "提示", "已经连接到服务器");
+        return;
+    }
+
+    qDebug() << "Connecting to server...";
+    tcpClient_->connectToServer("127.0.0.1", 8888);
+}
+
+void MainWindow::updateConnectionStatus()
+{
+    bool connected = tcpClient_->isConnected();
+    if (connected) {
+        ui_->statusLabel->setText("已连接");
+        ui_->statusLabel->setProperty("connected", true);
+    } else {
+        ui_->statusLabel->setText("未连接");
+        ui_->statusLabel->setProperty("connected", false);
+    }
+    // 重新应用样式
+    ui_->statusLabel->style()->unpolish(ui_->statusLabel);
+    ui_->statusLabel->style()->polish(ui_->statusLabel);
 }

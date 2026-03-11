@@ -8,6 +8,8 @@
 #include "network/tcpclient.h"
 #include "network/messagedispatcher.h"
 #include "data/userprofile.h"
+#include "logic/gamecontroller.h"
+#include "logic/aiengine.h"
 #include "ui/titlebar.h"
 
 QT_BEGIN_NAMESPACE
@@ -50,6 +52,8 @@ private:
     MessageDispatcher* dispatcher_;
     QSharedPointer<UserProfile> userProfile_;
     TitleBar* titleBar_;
+    GameController* gameController_;
+    AIEngine* aiEngine_;
 
     /**
      * @brief 初始化网络连接
@@ -80,6 +84,21 @@ private:
      * @brief 加载用户信息
      */
     void loadUserProfile();
+
+    /**
+     * @brief 显示登录对话框
+     */
+    void showLoginDialog();
+
+    /**
+     * @brief 连接到服务器
+     */
+    void connectToServer();
+
+    /**
+     * @brief 更新连接状态UI
+     */
+    void updateConnectionStatus();
 };
 
 #endif // MAINWINDOW_H
