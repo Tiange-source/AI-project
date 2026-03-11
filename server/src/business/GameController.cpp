@@ -12,7 +12,7 @@ GameController::~GameController() {
 }
 
 void GameController::initGame() {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     
     // 清空棋盘
     for (int i = 0; i < BOARD_SIZE; ++i) {
@@ -30,7 +30,7 @@ void GameController::initGame() {
 }
 
 bool GameController::makeMove(int row, int col, int playerId) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     
     // 检查游戏是否已结束
     if (gameOver_) {
@@ -79,8 +79,8 @@ bool GameController::makeMove(int row, int col, int playerId) {
     return true;
 }
 
-bool GameController::isValidMove(int row, int col) const {
-    std::lock_guard<std::mutex> lock(mutex_);
+bool GameController::isValidMove(int row, int col) {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     
     // 检查位置是否在棋盘内
     if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) {
@@ -126,7 +126,7 @@ const std::vector<Move>& GameController::getMoveHistory() const {
 }
 
 bool GameController::undoMove() {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     
     if (moveHistory_.empty()) {
         return false;

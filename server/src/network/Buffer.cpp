@@ -2,6 +2,7 @@
 #include <sys/uio.h>
 #include <errno.h>
 #include <unistd.h>
+#include <cassert>
 
 namespace gomoku {
 

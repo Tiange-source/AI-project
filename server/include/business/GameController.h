@@ -35,7 +35,7 @@ public:
     bool makeMove(int row, int col, int playerId);
     
     // 检查落子是否合法
-    bool isValidMove(int row, int col) const;
+    bool isValidMove(int row, int col);
     
     // 检查胜负
     GameResult checkWin(int row, int col, int playerId) const;
@@ -76,7 +76,7 @@ private:
     std::vector<Move> moveHistory_;
     bool gameOver_;
     int winner_;
-    std::mutex mutex_;
+    std::recursive_mutex mutex_;
 };
 
 } // namespace gomoku
