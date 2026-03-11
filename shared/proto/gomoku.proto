@@ -1,0 +1,380 @@
+syntax = "proto3";
+package gomoku;
+
+// ========================================
+// 消息类型枚举
+// ========================================
+enum MessageType {
+    UNKNOWN = 0;  // 未知消息类型
+
+    // 认证相关 (1-99)
+    LOGIN_REQUEST = 1;
+    LOGIN_RESPONSE = 2;
+    REGISTER_REQUEST = 3;
+    REGISTER_RESPONSE = 4;
+    LOGOUT_REQUEST = 5;
+    LOGOUT_RESPONSE = 6;
+
+    // 房间相关 (100-199)
+    CREATE_ROOM_REQUEST = 100;
+    CREATE_ROOM_RESPONSE = 101;
+    JOIN_ROOM_REQUEST = 102;
+    JOIN_ROOM_RESPONSE = 103;
+    LEAVE_ROOM_REQUEST = 104;
+    LEAVE_ROOM_RESPONSE = 105;
+    ROOM_LIST_REQUEST = 106;
+    ROOM_LIST_RESPONSE = 107;
+    PLAYER_JOINED_NOTIFY = 108;
+    PLAYER_LEFT_NOTIFY = 109;
+    ROOM_STATE_UPDATE_NOTIFY = 110;
+
+    // 游戏相关 (200-299)
+    START_GAME_REQUEST = 200;
+    START_GAME_RESPONSE = 201;
+    GAME_STARTED_NOTIFY = 202;
+    MOVE_REQUEST = 203;
+    MOVE_RESPONSE = 204;
+    MOVE_NOTIFY = 205;
+    GAME_OVER_NOTIFY = 206;
+    UNDO_REQUEST = 207;
+    UNDO_RESPONSE = 208;
+
+    // 匹配相关 (300-399)
+    RANDOM_MATCH_REQUEST = 300;
+    MATCH_WAITING_RESPONSE = 301;
+    MATCH_SUCCESS_NOTIFY = 302;
+    CANCEL_MATCH_REQUEST = 303;
+    CANCEL_MATCH_RESPONSE = 304;
+
+    // 聊天相关 (400-499)
+    CHAT_MESSAGE_REQUEST = 400;
+    CHAT_MESSAGE_NOTIFY = 401;
+
+    // 观战相关 (500-599)
+    SPECTATE_REQUEST = 500;
+    SPECTATE_RESPONSE = 501;
+    SPECTATOR_JOIN_NOTIFY = 502;
+    SPECTATOR_LEFT_NOTIFY = 503;
+
+    // 排行榜 (600-699)
+    RANK_LIST_REQUEST = 600;
+    RANK_LIST_RESPONSE = 601;
+
+    // 心跳和错误 (700-799)
+    HEARTBEAT_REQUEST = 700;
+    HEARTBEAT_RESPONSE = 701;
+    ERROR_NOTIFY = 702;
+}
+
+// ========================================
+// 枚举定义
+// ========================================
+enum RoomState {
+    WAITING = 0;   // 等待玩家
+    GAMING = 1;    // 游戏中
+    FINISHED = 2;  // 已结束
+}
+
+enum GameOverReason {
+    FIVE_IN_ROW = 0;   // 五子连珠
+    OPPONENT_QUIT = 1; // 对手退出
+    TIMEOUT = 2;       // 超时
+    DRAW = 3;          // 平局
+}
+
+enum ChatType {
+    LOBBY = 0;   // 大厅聊天
+    PRIVATE = 1; // 私聊
+    ROOM = 2;    // 房间聊天
+}
+
+enum RankType {
+    WIN_COUNT = 0; // 胜场数
+    RATING = 1;    // 积分
+    WIN_RATE = 2;  // 胜率
+}
+
+// ========================================
+// 基础数据结构
+// ========================================
+message UserInfo {
+    int32 user_id = 1;
+    string username = 2;
+    string nickname = 3;
+    string avatar_url = 4;
+    int32 win_count = 5;
+    int32 lose_count = 6;
+    int32 draw_count = 7;
+    int32 rating = 8;
+    int32 total_games = 9;
+}
+
+message Move {
+    int32 row = 1;
+    int32 col = 2;
+    int32 player_id = 3;
+}
+
+message RoomInfo {
+    string room_id = 1;
+    string room_name = 2;
+    int32 owner_id = 3;
+    bool has_password = 4;
+    RoomState state = 5;
+    UserInfo player1 = 6;
+    UserInfo player2 = 7;
+    int32 spectator_count = 8;
+    int32 current_turn = 9;
+}
+
+// ========================================
+// 认证相关消息
+// ========================================
+message LoginRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    bool success = 1;
+    string error_msg = 2;
+    string token = 3;
+    UserInfo user_info = 4;
+}
+
+message RegisterRequest {
+    string username = 1;
+    string password = 2;
+    string email = 3;
+    string nickname = 4;
+}
+
+message RegisterResponse {
+    bool success = 1;
+    string error_msg = 2;
+    UserInfo user_info = 3;
+}
+
+message LogoutRequest {
+    string token = 1;
+}
+
+message LogoutResponse {
+    bool success = 1;
+    string error_msg = 2;
+}
+
+// ========================================
+// 房间相关消息
+// ========================================
+message CreateRoomRequest {
+    string room_name = 1;
+    string password = 2;  // 可选，为空则无密码
+}
+
+message CreateRoomResponse {
+    bool success = 1;
+    string error_msg = 2;
+    RoomInfo room_info = 3;
+}
+
+message JoinRoomRequest {
+    string room_id = 1;
+    string password = 2;
+}
+
+message JoinRoomResponse {
+    bool success = 1;
+    string error_msg = 2;
+    RoomInfo room_info = 3;
+}
+
+message LeaveRoomRequest {
+    string room_id = 1;
+}
+
+message LeaveRoomResponse {
+    bool success = 1;
+    string error_msg = 2;
+}
+
+message RoomListRequest {
+    int32 offset = 1;
+    int32 limit = 2;
+}
+
+message RoomListResponse {
+    repeated RoomInfo rooms = 1;
+    int32 total_count = 2;
+}
+
+message PlayerJoinedNotify {
+    UserInfo user_info = 1;
+    string room_id = 2;
+}
+
+message PlayerLeftNotify {
+    int32 user_id = 1;
+    string room_id = 2;
+}
+
+message RoomStateUpdateNotify {
+    string room_id = 1;
+    RoomState state = 2;
+}
+
+// ========================================
+// 游戏相关消息
+// ========================================
+message StartGameRequest {
+    string room_id = 1;
+}
+
+message StartGameResponse {
+    bool success = 1;
+    string error_msg = 2;
+    int32 first_player_id = 3;
+}
+
+message GameStartedNotify {
+    string room_id = 1;
+    UserInfo player1 = 2;
+    UserInfo player2 = 3;
+    int32 first_player_id = 4;
+}
+
+message MoveRequest {
+    int32 row = 1;
+    int32 col = 2;
+}
+
+message MoveResponse {
+    bool success = 1;
+    string error_msg = 2;
+}
+
+message MoveNotify {
+    int32 player_id = 1;
+    int32 row = 2;
+    int32 col = 3;
+    int32 next_turn_player_id = 4;
+}
+
+message GameOverNotify {
+    int32 winner_id = 1;
+    GameOverReason reason = 2;
+    int32 total_moves = 3;
+}
+
+message UndoRequest {
+    string room_id = 1;
+}
+
+message UndoResponse {
+    bool success = 1;
+    string error_msg = 2;
+}
+
+// ========================================
+// 匹配相关消息
+// ========================================
+message RandomMatchRequest {
+    // 无参数
+}
+
+message MatchWaitingResponse {
+    int32 queue_position = 1;
+    int32 estimated_wait_time = 2;
+}
+
+message MatchSuccessNotify {
+    string room_id = 1;
+    UserInfo opponent_info = 2;
+}
+
+message CancelMatchRequest {
+    // 无参数
+}
+
+message CancelMatchResponse {
+    bool success = 1;
+    string error_msg = 2;
+}
+
+// ========================================
+// 聊天相关消息
+// ========================================
+message ChatMessageRequest {
+    ChatType type = 1;
+    int32 target_id = 2;  // 私聊目标用户ID
+    string room_id = 3;   // 房间ID
+    string content = 4;
+}
+
+message ChatMessageNotify {
+    ChatType type = 1;
+    int32 sender_id = 2;
+    string sender_name = 3;
+    string content = 4;
+    int64 timestamp = 5;
+}
+
+// ========================================
+// 观战相关消息
+// ========================================
+message SpectateRequest {
+    string room_id = 1;
+}
+
+message SpectateResponse {
+    bool success = 1;
+    string error_msg = 2;
+    RoomInfo room_info = 3;
+    repeated Move history_moves = 4;
+}
+
+message SpectatorJoinNotify {
+    UserInfo user_info = 1;
+    string room_id = 2;
+}
+
+message SpectatorLeftNotify {
+    int32 user_id = 1;
+    string room_id = 2;
+}
+
+// ========================================
+// 排行榜相关消息
+// ========================================
+message RankListRequest {
+    RankType type = 1;
+    int32 offset = 2;
+    int32 limit = 3;
+}
+
+message RankListResponse {
+    repeated RankEntry entries = 1;
+    int32 total_count = 2;
+}
+
+message RankEntry {
+    int32 rank = 1;
+    UserInfo user_info = 2;
+    int32 value = 3;  // 根据RankType不同，可能是胜场数、积分或胜率
+}
+
+// ========================================
+// 心跳和错误消息
+// ========================================
+message HeartbeatRequest {
+    int64 timestamp = 1;
+}
+
+message HeartbeatResponse {
+    int64 timestamp = 1;
+}
+
+message ErrorNotify {
+    int32 error_code = 1;
+    string error_msg = 2;
+}
