@@ -11,6 +11,7 @@
 #include "logic/gamecontroller.h"
 #include "logic/aiengine.h"
 #include "ui/titlebar.h"
+#include "ui/offlinegamedialog.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -89,6 +90,11 @@ private:
      * @brief 显示登录对话框
      */
     void showLoginDialog();
+
+    /**
+     * @brief 显示离线对战
+     */
+    void showOfflineGame();
 
     /**
      * @brief 连接到服务器

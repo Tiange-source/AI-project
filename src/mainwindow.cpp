@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QStyle>
+#include "ui/offlinegamedialog.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -98,6 +99,11 @@ void MainWindow::initUI()
     connect(ui_->registerButton, &QPushButton::clicked, this, [this]() {
         qDebug() << "Register button clicked";
         QMessageBox::information(this, "注册", "注册功能待实现");
+    });
+
+    connect(ui_->offlineButton, &QPushButton::clicked, this, [this]() {
+        qDebug() << "Offline game button clicked";
+        showOfflineGame();
     });
 
     // 连接菜单动作
@@ -250,6 +256,13 @@ void MainWindow::showLoginDialog()
     qDebug() << "Show login dialog";
     // TODO: 实现登录对话框
     QMessageBox::information(this, "登录", "登录对话框即将实现");
+}
+
+void MainWindow::showOfflineGame()
+{
+    qDebug() << "Show offline game";
+    OfflineGameDialog dialog(this);
+    dialog.exec();
 }
 
 void MainWindow::connectToServer()

@@ -37,6 +37,7 @@ SOURCES += \
     $$SRC_DIR/mainwindow.cpp \
     $$SRC_DIR/ui/titlebar.cpp \
     $$SRC_DIR/ui/logindialog.cpp \
+    $$SRC_DIR/ui/offlinegamedialog.cpp \
     $$SRC_DIR/ui/boardwidget.cpp \
     $$SRC_DIR/network/tcpclient.cpp \
     $$SRC_DIR/network/protobufcodec.cpp \
@@ -51,6 +52,7 @@ HEADERS += \
     $$SRC_DIR/mainwindow.h \
     $$SRC_DIR/ui/titlebar.h \
     $$SRC_DIR/ui/logindialog.h \
+    $$SRC_DIR/ui/offlinegamedialog.h \
     $$SRC_DIR/ui/boardwidget.h \
     $$SRC_DIR/network/tcpclient.h \
     $$SRC_DIR/network/protobufcodec.h \
@@ -62,7 +64,9 @@ HEADERS += \
 
 # UI文件
 FORMS += \
-    $$SRC_DIR/mainwindow.ui
+    $$SRC_DIR/mainwindow.ui \
+    $$SRC_DIR/ui/logindialog.ui \
+    $$SRC_DIR/ui/offlinegamedialog.ui
 
 # 资源文件
 RESOURCES += \
