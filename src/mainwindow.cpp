@@ -9,7 +9,11 @@ MainWindow::MainWindow(QWidget* parent)
     , tcpClient_(nullptr)
     , dispatcher_(nullptr)
     , userProfile_(UserProfile::create())
+    , titleBar_(nullptr)
 {
+    // 设置无边框窗口
+    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
+
     ui_->setupUi(this);
 
     // 初始化网络连接
@@ -17,6 +21,12 @@ MainWindow::MainWindow(QWidget* parent)
 
     // 初始化UI
     initUI();
+
+    // 初始化标题栏
+    initTitleBar();
+
+    // 设置窗口阴影
+    setWindowShadow();
 
     // 注册消息处理器
     registerMessageHandlers();
@@ -73,6 +83,9 @@ void MainWindow::initUI()
         qWarning() << "Failed to load style sheet";
     }
 
+    // 保存中央窗口部件的指针，因为后续会重新设置
+    QWidget* centralWidget = ui_->centralwidget;
+
     // 连接按钮信号
     connect(ui_->loginButton, &QPushButton::clicked, this, [this]() {
         qDebug() << "Login button clicked";
@@ -114,6 +127,70 @@ void MainWindow::initUI()
     });
 
     qDebug() << "UI initialized";
+}
+
+void MainWindow::initTitleBar()
+{
+    // 创建自定义标题栏
+    titleBar_ = new TitleBar(this);
+
+    // 连接信号
+    connect(titleBar_, &TitleBar::minimizeClicked, this, &QMainWindow::showMinimized);
+    connect(titleBar_, &TitleBar::maximizeClicked, this, [this](bool maximized) {
+        if (maximized) {
+            showMaximized();
+        } else {
+            showNormal();
+        }
+    });
+    connect(titleBar_, &TitleBar::closeClicked, this, &QMainWindow::close);
+
+    qDebug() << "Title bar initialized";
+}
+
+void MainWindow::setWindowShadow()
+{
+    // 设置窗口背景透明
+    setAttribute(Qt::WA_TranslucentBackground, true);
+
+    // 创建阴影效果
+    QGraphicsDropShadowEffect* shadow = new QGraphicsDropShadowEffect(this);
+    shadow->setBlurRadius(30);
+    shadow->setColor(QColor(0, 0, 0, 80));
+    shadow->setOffset(0, 5);
+
+    // 创建主容器
+    QWidget* mainContainer = new QWidget(this);
+    mainContainer->setGraphicsEffect(shadow);
+    mainContainer->setStyleSheet(R"(
+        QWidget {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                                        stop:0 #667eea, stop:1 #764ba2);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    )");
+
+    // 创建布局
+    QVBoxLayout* mainLayout = new QVBoxLayout(mainContainer);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
+
+    // 添加标题栏
+    if (titleBar_) {
+        mainLayout->addWidget(titleBar_);
+    }
+
+    // 添加中央窗口部件
+    if (ui_->centralwidget) {
+        ui_->centralwidget->setParent(mainContainer);
+        mainLayout->addWidget(ui_->centralwidget);
+    }
+
+    // 设置为主窗口的中央部件
+    QMainWindow::setCentralWidget(mainContainer);
+
+    qDebug() << "Window shadow set";
 }
 
 void MainWindow::registerMessageHandlers()

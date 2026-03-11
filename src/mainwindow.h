@@ -4,9 +4,11 @@
 #include <QMainWindow>
 #include <QSharedPointer>
 #include <QFile>
+#include <QGraphicsDropShadowEffect>
 #include "network/tcpclient.h"
 #include "network/messagedispatcher.h"
 #include "data/userprofile.h"
+#include "ui/titlebar.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -47,6 +49,7 @@ private:
     TcpClient* tcpClient_;
     MessageDispatcher* dispatcher_;
     QSharedPointer<UserProfile> userProfile_;
+    TitleBar* titleBar_;
 
     /**
      * @brief 初始化网络连接
@@ -57,6 +60,16 @@ private:
      * @brief 初始化UI
      */
     void initUI();
+
+    /**
+     * @brief 初始化标题栏
+     */
+    void initTitleBar();
+
+    /**
+     * @brief 设置窗口阴影
+     */
+    void setWindowShadow();
 
     /**
      * @brief 注册消息处理器

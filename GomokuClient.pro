@@ -35,6 +35,7 @@ PROTOBUF_HEADERS = $$BUILD_DIR/gomoku.pb.h
 SOURCES += \
     $$SRC_DIR/main.cpp \
     $$SRC_DIR/mainwindow.cpp \
+    $$SRC_DIR/ui/titlebar.cpp \
     $$SRC_DIR/network/tcpclient.cpp \
     $$SRC_DIR/network/protobufcodec.cpp \
     $$SRC_DIR/network/messagedispatcher.cpp \
@@ -44,6 +45,7 @@ SOURCES += \
 # 头文件
 HEADERS += \
     $$SRC_DIR/mainwindow.h \
+    $$SRC_DIR/ui/titlebar.h \
     $$SRC_DIR/network/tcpclient.h \
     $$SRC_DIR/network/protobufcodec.h \
     $$SRC_DIR/network/messagedispatcher.h \
