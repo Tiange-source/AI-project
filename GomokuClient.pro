@@ -13,16 +13,22 @@ SRC_DIR = $$PWD/src
 BUILD_DIR = $$PWD/build
 PROTO_DIR = $$PWD/protocol
 SHARED_PROTO_DIR = $$PWD/../shared/proto
-SHARED_BUILD_DIR = $$PWD/../shared/build
 
-# Protobuf配置
-PROTOBUF_SOURCES = $$SHARED_BUILD_DIR/gomoku.pb.cc
-PROTOBUF_HEADERS = $$SHARED_BUILD_DIR/gomoku.pb.h
+# Protobuf路径
+PROTOBUF_ROOT = $$PWD/../protobuf2112
+PROTOBUF_INCLUDE = $$PROTOBUF_ROOT/include
+PROTOBUF_LIB = $$PROTOBUF_ROOT/lib
+PROTOBUF_LIB_FILE = $$PROTOBUF_LIB/libprotobuf.a
+PROTOBUF_COMPILER = $$PROTOBUF_ROOT/protoc.exe
+
+# Protobuf编译输出
+PROTOBUF_SOURCES = $$BUILD_DIR/gomoku.pb.cc
+PROTOBUF_HEADERS = $$BUILD_DIR/gomoku.pb.h
 
 # 检查Protobuf文件是否存在
 !exists($$PROTOBUF_SOURCES) {
-    warning("Protobuf编译文件不存在，请先编译shared/proto/gomoku.proto")
-    warning("运行: cd shared/proto && ./compile.sh")
+    warning("Protobuf编译文件不存在")
+    warning("请运行: $$PROTOBUF_COMPILER --proto_path=shared/proto --cpp_out=build shared/proto/gomoku.proto")
 }
 
 # 源文件
@@ -58,7 +64,11 @@ exists($$PROTOBUF_SOURCES) {
     HEADERS += $$PROTOBUF_HEADERS
 
     # Protobuf头文件路径
-    INCLUDEPATH += $$SHARED_BUILD_DIR
+    INCLUDEPATH += $$BUILD_DIR
+    INCLUDEPATH += $$PROTOBUF_INCLUDE
+
+    # 链接Protobuf库
+    LIBS += -L$$PROTOBUF_LIB -lprotobuf
 }
 
 # 默认规则用于部署
@@ -83,9 +93,9 @@ win32 {
         UI_DIR = $$BUILD_DIR/release/ui
     }
 
-    # 设置编码
-    QMAKE_CXXFLAGS += /utf-8
-    QMAKE_CFLAGS += /utf-8
+    # 设置编码（MinGW使用-exec-charset和-input-charset）
+    QMAKE_CXXFLAGS += -finput-charset=UTF-8 -fexec-charset=UTF-8
+    QMAKE_CFLAGS += -finput-charset=UTF-8 -fexec-charset=UTF-8
 } else {
     # Unix/Linux/Mac配置
     DESTDIR = $$BUILD_DIR

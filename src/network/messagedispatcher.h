@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QByteArray>
+#include <QDebug>
 #include <functional>
 #include <map>
 #include <google/protobuf/message.h>
