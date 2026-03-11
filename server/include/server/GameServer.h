@@ -4,6 +4,7 @@
 #include "network/EventLoop.h"
 #include "network/Acceptor.h"
 #include "network/TcpConnection.h"
+#include "network/Buffer.h"
 #include "storage/MySQLClient.h"
 #include "storage/RedisClient.h"
 #include "business/UserManager.h"
@@ -12,7 +13,8 @@
 #include "business/MatchManager.h"
 #include "business/ChatManager.h"
 #include "business/SpectatorManager.h"
-#include "protocol/MessageDispatcher.h"
+#include "protocol/ProtobufCodec.h"
+#include "gomoku.pb.h"
 #include <string>
 #include <unordered_map>
 #include <memory>
@@ -51,7 +53,7 @@ private:
     void onMessage(const TcpConnectionPtr& conn, Buffer* buffer);
     
     // 消息路由
-    void routeMessage(int userId, MessageType type, const std::string& message);
+    void routeMessage(int userId, const ProtobufMessagePtr& message);
     
     // 登录处理
     void handleLogin(int connId, const std::string& username, const std::string& password);

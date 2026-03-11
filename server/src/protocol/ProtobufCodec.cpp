@@ -5,12 +5,51 @@
 #include <arpa/inet.h>
 #include <cstring>
 
+// 包含protobuf生成的头文件
+#include "gomoku.pb.h"
+
 namespace gomoku {
+
+// 静态成员初始化
+std::unordered_map<int, std::function<ProtobufCodec::ProtobufMessagePtr()>> ProtobufCodec::messageFactories_;
+std::unordered_map<int, std::string> ProtobufCodec::messageTypeNames_;
 
 const int ProtobufCodec::kHeaderLen;
 const int ProtobufCodec::kMaxMessageLen;
 
 ProtobufCodec::ProtobufCodec() {
+    // 静态初始化消息工厂（只执行一次）
+    static bool initialized = false;
+    if (!initialized) {
+        initialized = true;
+        
+        // 注册消息工厂
+        registerMessageFactory<gomoku::LoginRequest>(static_cast<int>(gomoku::MessageType::LOGIN_REQUEST));
+        registerMessageFactory<gomoku::LoginResponse>(static_cast<int>(gomoku::MessageType::LOGIN_RESPONSE));
+        registerMessageFactory<gomoku::RegisterRequest>(static_cast<int>(gomoku::MessageType::REGISTER_REQUEST));
+        registerMessageFactory<gomoku::RegisterResponse>(static_cast<int>(gomoku::MessageType::REGISTER_RESPONSE));
+        registerMessageFactory<gomoku::CreateRoomRequest>(static_cast<int>(gomoku::MessageType::CREATE_ROOM_REQUEST));
+        registerMessageFactory<gomoku::CreateRoomResponse>(static_cast<int>(gomoku::MessageType::CREATE_ROOM_RESPONSE));
+        registerMessageFactory<gomoku::JoinRoomRequest>(static_cast<int>(gomoku::MessageType::JOIN_ROOM_REQUEST));
+        registerMessageFactory<gomoku::JoinRoomResponse>(static_cast<int>(gomoku::MessageType::JOIN_ROOM_RESPONSE));
+        registerMessageFactory<gomoku::LeaveRoomRequest>(static_cast<int>(gomoku::MessageType::LEAVE_ROOM_REQUEST));
+        registerMessageFactory<gomoku::RoomListRequest>(static_cast<int>(gomoku::MessageType::ROOM_LIST_REQUEST));
+        registerMessageFactory<gomoku::RoomListResponse>(static_cast<int>(gomoku::MessageType::ROOM_LIST_RESPONSE));
+        registerMessageFactory<gomoku::StartGameRequest>(static_cast<int>(gomoku::MessageType::START_GAME_REQUEST));
+        registerMessageFactory<gomoku::MoveRequest>(static_cast<int>(gomoku::MessageType::MOVE_REQUEST));
+        registerMessageFactory<gomoku::MoveResponse>(static_cast<int>(gomoku::MessageType::MOVE_RESPONSE));
+        registerMessageFactory<gomoku::MoveNotify>(static_cast<int>(gomoku::MessageType::MOVE_NOTIFY));
+        registerMessageFactory<gomoku::GameOverNotify>(static_cast<int>(gomoku::MessageType::GAME_OVER_NOTIFY));
+        registerMessageFactory<gomoku::RandomMatchRequest>(static_cast<int>(gomoku::MessageType::RANDOM_MATCH_REQUEST));
+        registerMessageFactory<gomoku::ChatMessageRequest>(static_cast<int>(gomoku::MessageType::CHAT_MESSAGE_REQUEST));
+        registerMessageFactory<gomoku::ChatMessageNotify>(static_cast<int>(gomoku::MessageType::CHAT_MESSAGE_NOTIFY));
+        registerMessageFactory<gomoku::SpectateRequest>(static_cast<int>(gomoku::MessageType::SPECTATE_REQUEST));
+        registerMessageFactory<gomoku::SpectateResponse>(static_cast<int>(gomoku::MessageType::SPECTATE_RESPONSE));
+        registerMessageFactory<gomoku::RankListRequest>(static_cast<int>(gomoku::MessageType::RANK_LIST_REQUEST));
+        registerMessageFactory<gomoku::RankListResponse>(static_cast<int>(gomoku::MessageType::RANK_LIST_RESPONSE));
+        
+        LOG_INFO("ProtobufCodec message factories initialized");
+    }
 }
 
 ProtobufCodec::~ProtobufCodec() {
@@ -68,7 +107,7 @@ void ProtobufCodec::decode(const std::shared_ptr<TcpConnection>& conn, Buffer* b
         ProtobufMessagePtr message = createMessage(type);
         if (!message) {
             if (errorCallback_) {
-                errorCallback_(conn, buf, 0, "unknown message type");
+                errorCallback_(conn, buf, 0, "unknown message type: " + std::to_string(type));
             }
             buf->retrieve(messageLen + kHeaderLen);
             continue;
@@ -117,67 +156,49 @@ int ProtobufCodec::getMessageType(const google::protobuf::Message& message) {
     // 根据消息的描述符获取消息类型
     const std::string& typeName = message.GetTypeName();
     
-    // 这里可以根据类型名称映射到消息类型
-    // 简化实现：使用哈希值
-    return static_cast<int>(std::hash<std::string>()(typeName) % 1000);
+    // 根据类型名称映射到消息类型
+    // 从protobuf文件中定义的枚举值
+    if (typeName == "gomoku.LoginRequest") return static_cast<int>(gomoku::MessageType::LOGIN_REQUEST);
+    if (typeName == "gomoku.LoginResponse") return static_cast<int>(gomoku::MessageType::LOGIN_RESPONSE);
+    if (typeName == "gomoku.RegisterRequest") return static_cast<int>(gomoku::MessageType::REGISTER_REQUEST);
+    if (typeName == "gomoku.RegisterResponse") return static_cast<int>(gomoku::MessageType::REGISTER_RESPONSE);
+    if (typeName == "gomoku.CreateRoomRequest") return static_cast<int>(gomoku::MessageType::CREATE_ROOM_REQUEST);
+    if (typeName == "gomoku.CreateRoomResponse") return static_cast<int>(gomoku::MessageType::CREATE_ROOM_RESPONSE);
+    if (typeName == "gomoku.JoinRoomRequest") return static_cast<int>(gomoku::MessageType::JOIN_ROOM_REQUEST);
+    if (typeName == "gomoku.JoinRoomResponse") return static_cast<int>(gomoku::MessageType::JOIN_ROOM_RESPONSE);
+    if (typeName == "gomoku.LeaveRoomRequest") return static_cast<int>(gomoku::MessageType::LEAVE_ROOM_REQUEST);
+    if (typeName == "gomoku.RoomListRequest") return static_cast<int>(gomoku::MessageType::ROOM_LIST_REQUEST);
+    if (typeName == "gomoku.RoomListResponse") return static_cast<int>(gomoku::MessageType::ROOM_LIST_RESPONSE);
+    if (typeName == "gomoku.StartGameRequest") return static_cast<int>(gomoku::MessageType::START_GAME_REQUEST);
+    if (typeName == "gomoku.MoveRequest") return static_cast<int>(gomoku::MessageType::MOVE_REQUEST);
+    if (typeName == "gomoku.MoveResponse") return static_cast<int>(gomoku::MessageType::MOVE_RESPONSE);
+    if (typeName == "gomoku.MoveNotify") return static_cast<int>(gomoku::MessageType::MOVE_NOTIFY);
+    if (typeName == "gomoku.GameOverNotify") return static_cast<int>(gomoku::MessageType::GAME_OVER_NOTIFY);
+    if (typeName == "gomoku.RandomMatchRequest") return static_cast<int>(gomoku::MessageType::RANDOM_MATCH_REQUEST);
+    if (typeName == "gomoku.ChatMessageRequest") return static_cast<int>(gomoku::MessageType::CHAT_MESSAGE_REQUEST);
+    if (typeName == "gomoku.ChatMessageNotify") return static_cast<int>(gomoku::MessageType::CHAT_MESSAGE_NOTIFY);
+    if (typeName == "gomoku.SpectateRequest") return static_cast<int>(gomoku::MessageType::SPECTATE_REQUEST);
+    if (typeName == "gomoku.SpectateResponse") return static_cast<int>(gomoku::MessageType::SPECTATE_RESPONSE);
+    if (typeName == "gomoku.RankListRequest") return static_cast<int>(gomoku::MessageType::RANK_LIST_REQUEST);
+    if (typeName == "gomoku.RankListResponse") return static_cast<int>(gomoku::MessageType::RANK_LIST_RESPONSE);
+    
+    // 未知类型
+    LOG_WARN("Unknown message type: " + typeName);
+    return 0;
 }
 
 ProtobufCodec::ProtobufMessagePtr ProtobufCodec::createMessage(int messageType) {
-    ProtobufMessageType type = static_cast<ProtobufMessageType>(messageType);
-    
-    // 这里需要根据消息类型创建对应的消息对象
-    // 需要引用生成的protobuf消息类
-    // 暂时返回nullptr，实际使用时需要包含对应的protobuf头文件
-    
-    switch (type) {
-        case ProtobufMessageType::LOGIN_REQUEST:
-        case ProtobufMessageType::LOGIN_RESPONSE:
-        case ProtobufMessageType::REGISTER_REQUEST:
-        case ProtobufMessageType::REGISTER_RESPONSE:
-        case ProtobufMessageType::LOGOUT_REQUEST:
-        case ProtobufMessageType::LOGOUT_RESPONSE:
-        case ProtobufMessageType::CREATE_ROOM_REQUEST:
-        case ProtobufMessageType::CREATE_ROOM_RESPONSE:
-        case ProtobufMessageType::JOIN_ROOM_REQUEST:
-        case ProtobufMessageType::JOIN_ROOM_RESPONSE:
-        case ProtobufMessageType::LEAVE_ROOM_REQUEST:
-        case ProtobufMessageType::LEAVE_ROOM_RESPONSE:
-        case ProtobufMessageType::ROOM_LIST_REQUEST:
-        case ProtobufMessageType::ROOM_LIST_RESPONSE:
-        case ProtobufMessageType::PLAYER_JOINED_NOTIFY:
-        case ProtobufMessageType::PLAYER_LEFT_NOTIFY:
-        case ProtobufMessageType::ROOM_STATE_UPDATE_NOTIFY:
-        case ProtobufMessageType::START_GAME_REQUEST:
-        case ProtobufMessageType::START_GAME_RESPONSE:
-        case ProtobufMessageType::GAME_STARTED_NOTIFY:
-        case ProtobufMessageType::MOVE_REQUEST:
-        case ProtobufMessageType::MOVE_RESPONSE:
-        case ProtobufMessageType::MOVE_NOTIFY:
-        case ProtobufMessageType::GAME_OVER_NOTIFY:
-        case ProtobufMessageType::UNDO_REQUEST:
-        case ProtobufMessageType::UNDO_RESPONSE:
-        case ProtobufMessageType::RANDOM_MATCH_REQUEST:
-        case ProtobufMessageType::MATCH_WAITING_RESPONSE:
-        case ProtobufMessageType::MATCH_SUCCESS_NOTIFY:
-        case ProtobufMessageType::CANCEL_MATCH_REQUEST:
-        case ProtobufMessageType::CANCEL_MATCH_RESPONSE:
-        case ProtobufMessageType::CHAT_MESSAGE_REQUEST:
-        case ProtobufMessageType::CHAT_MESSAGE_NOTIFY:
-        case ProtobufMessageType::SPECTATE_REQUEST:
-        case ProtobufMessageType::SPECTATE_RESPONSE:
-        case ProtobufMessageType::SPECTATOR_JOIN_NOTIFY:
-        case ProtobufMessageType::SPECTATOR_LEFT_NOTIFY:
-        case ProtobufMessageType::RANK_LIST_REQUEST:
-        case ProtobufMessageType::RANK_LIST_RESPONSE:
-        case ProtobufMessageType::HEARTBEAT_REQUEST:
-        case ProtobufMessageType::HEARTBEAT_RESPONSE:
-        case ProtobufMessageType::ERROR_NOTIFY:
-            // TODO: 创建对应的消息对象
-            return nullptr;
-            
-        default:
-            return nullptr;
+    auto it = messageFactories_.find(messageType);
+    if (it != messageFactories_.end()) {
+        return it->second();
     }
+    
+    LOG_WARN("No factory registered for message type: " + std::to_string(messageType));
+    return nullptr;
+}
+
+void ProtobufCodec::registerMessageType(int messageType, const std::string& typeName) {
+    messageTypeNames_[messageType] = typeName;
 }
 
 void ProtobufCodec::setMessageCallback(const ProtobufMessageCallback& cb) {

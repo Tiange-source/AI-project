@@ -204,84 +204,92 @@ void GameServer::onConnectionClosed(const TcpConnectionPtr& conn) {
 
 void GameServer::onMessage(const TcpConnectionPtr& conn, Buffer* buffer) {
     // 使用ProtobufCodec解析消息
-    std::vector<std::pair<MessageType, std::string>> messages;
-    ProtobufCodec::decode(buffer, messages);
+    // 注意：ProtobufCodec::decode会直接调用messageCallback，所以我们不需要手动提取消息
+    // 我们需要设置ProtobufCodec的回调函数
+    static ProtobufCodec codec;
     
-    for (const auto& msg : messages) {
-        MessageType type = msg.first;
-        const std::string& data = msg.second;
+    static bool codecInitialized = false;
+    if (!codecInitialized) {
+        codecInitialized = true;
         
-        // 获取userId
-        int userId = 0;
-        auto it = connIdToUserId_.find(conn->getConnId());
-        if (it != connIdToUserId_.end()) {
-            userId = it->second;
-        }
+        // 设置消息回调
+        codec.setMessageCallback([this](const TcpConnectionPtr& conn, const ProtobufMessagePtr& message) {
+            // 获取userId
+            int userId = 0;
+            auto it = connIdToUserId_.find(conn->getConnId());
+            if (it != connIdToUserId_.end()) {
+                userId = it->second;
+            }
+            
+            // 根据消息类型分发到对应处理器
+            this->routeMessage(userId, message);
+        });
         
-        // 路由消息
-        routeMessage(userId, type, data);
+        // 设置错误回调
+        codec.setErrorCallback([this](const TcpConnectionPtr& conn, Buffer* buf, int errorCode, const std::string& errorMessage) {
+            LOG_ERROR("Protocol codec error: " + errorMessage + " (" + std::to_string(errorCode) + ")");
+            // 可以选择关闭连接
+        });
     }
+    
+    // 解码消息
+    codec.decode(conn, buffer);
 }
 
-void GameServer::routeMessage(int userId, MessageType type, const std::string& message) {
-    // 根据消息类型分发到对应处理器
-    // 这里简化处理，实际应该解析Protobuf消息
+void GameServer::routeMessage(int userId, const ProtobufMessagePtr& message) {
+    if (!message) {
+        LOG_ERROR("GameServer::routeMessage - null message");
+        return;
+    }
     
-    switch (type) {
-        case MessageType::LOGIN_REQUEST:
-            // 解析登录请求
-            handleLogin(userId, "username", "password");
-            break;
-            
-        case MessageType::REGISTER_REQUEST:
-            // 解析注册请求
-            handleRegister(userId, "username", "password", "email", "nickname");
-            break;
-            
-        case MessageType::CREATE_ROOM_REQUEST:
-            // 解析创建房间请求
-            handleCreateRoom(userId, "Room Name", "");
-            break;
-            
-        case MessageType::JOIN_ROOM_REQUEST:
-            // 解析加入房间请求
-            handleJoinRoom(userId, "123456", "");
-            break;
-            
-        case MessageType::LEAVE_ROOM_REQUEST:
-            handleLeaveRoom(userId);
-            break;
-            
-        case MessageType::START_GAME_REQUEST:
-            handleStartGame(userId);
-            break;
-            
-        case MessageType::MOVE_REQUEST:
-            // 解析落子请求
-            handleMove(userId, 5, 5);
-            break;
-            
-        case MessageType::CHAT_MESSAGE_REQUEST:
-            // 解析聊天消息
-            handleChatMessage(userId, ChatType::LOBBY, 0, "", "Hello");
-            break;
-            
-        case MessageType::SPECTATE_REQUEST:
-            // 解析观战请求
-            handleSpectate(userId, "123456");
-            break;
-            
-        case MessageType::RANDOM_MATCH_REQUEST:
-            handleRandomMatch(userId);
-            break;
-            
-        case MessageType::RANK_LIST_REQUEST:
-            handleRankList(userId, RankType::RATING, 0, 10);
-            break;
-            
-        default:
-            LOG_WARN("Unknown message type: " + std::to_string(static_cast<int>(type)));
-            break;
+    const std::string& typeName = message->GetTypeName();
+    
+    // 根据消息类型分发到对应处理器
+    if (typeName == "gomoku.LoginRequest") {
+        auto* request = static_cast<gomoku::LoginRequest*>(message.get());
+        handleLogin(userId, request->username(), request->password());
+    }
+    else if (typeName == "gomoku.RegisterRequest") {
+        auto* request = static_cast<gomoku::RegisterRequest*>(message.get());
+        handleRegister(userId, request->username(), request->password(), request->email(), request->nickname());
+    }
+    else if (typeName == "gomoku.CreateRoomRequest") {
+        auto* request = static_cast<gomoku::CreateRoomRequest*>(message.get());
+        handleCreateRoom(userId, request->room_name(), request->password());
+    }
+    else if (typeName == "gomoku.JoinRoomRequest") {
+        auto* request = static_cast<gomoku::JoinRoomRequest*>(message.get());
+        handleJoinRoom(userId, request->room_id(), request->password());
+    }
+    else if (typeName == "gomoku.LeaveRoomRequest") {
+        handleLeaveRoom(userId);
+    }
+    else if (typeName == "gomoku.StartGameRequest") {
+        handleStartGame(userId);
+    }
+    else if (typeName == "gomoku.MoveRequest") {
+        auto* request = static_cast<gomoku::MoveRequest*>(message.get());
+        handleMove(userId, request->row(), request->col());
+    }
+    else if (typeName == "gomoku.ChatMessageRequest") {
+        auto* request = static_cast<gomoku::ChatMessageRequest*>(message.get());
+        ChatType type = static_cast<ChatType>(request->type());
+        handleChatMessage(userId, type, request->target_id(), request->room_id(), request->content());
+    }
+    else if (typeName == "gomoku.SpectateRequest") {
+        auto* request = static_cast<gomoku::SpectateRequest*>(message.get());
+        handleSpectate(userId, request->room_id());
+    }
+    else if (typeName == "gomoku.RandomMatchRequest") {
+        handleRandomMatch(userId);
+    }
+    else if (typeName == "gomoku.RankListRequest") {
+        auto* request = static_cast<gomoku::RankListRequest*>(message.get());
+        RankType type = static_cast<RankType>(request->type());
+        handleRankList(userId, type, request->offset(), request->limit());
+    }
+    else {
+        LOG_WARN("Unknown message type: " + typeName);
     }
 }
 
