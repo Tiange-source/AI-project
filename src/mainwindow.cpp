@@ -38,6 +38,9 @@ MainWindow::MainWindow(QWidget* parent)
     // 加载用户信息
     loadUserProfile();
 
+    // 自动连接到服务器
+    connectToServer();
+
     qDebug() << "MainWindow initialized";
 }
 
@@ -90,10 +93,20 @@ void MainWindow::initUI()
     // 保存中央窗口部件的指针，因为后续会重新设置
     QWidget* centralWidget = ui_->centralwidget;
 
+    // 初始状态下隐藏登录按钮，等待连接成功后再显示
+    ui_->loginButton->setVisible(false);
+    ui_->loginButton->setEnabled(false);
+
     // 连接按钮信号
     connect(ui_->offlineButton, &QPushButton::clicked, this, [this]() {
         qDebug() << "Start game button clicked";
         showOfflineGame();
+    });
+
+    // 连接登录按钮信号
+    connect(ui_->loginButton, &QPushButton::clicked, this, [this]() {
+        qDebug() << "Login button clicked";
+        showLoginDialog();
     });
 
     // 连接菜单动作
@@ -224,19 +237,18 @@ void MainWindow::loadUserProfile()
 void MainWindow::onConnected()
 {
     qDebug() << "Connected to server";
-    QMessageBox::information(this, "连接成功", "已成功连接到服务器");
+    updateConnectionStatus();
 }
 
 void MainWindow::onDisconnected()
 {
     qDebug() << "Disconnected from server";
-    QMessageBox::warning(this, "连接断开", "与服务器的连接已断开");
+    updateConnectionStatus();
 }
 
 void MainWindow::onConnectionError(const QString& error)
 {
     qDebug() << "Connection error:" << error;
-    QMessageBox::critical(this, "连接错误", "连接服务器失败: " + error);
     updateConnectionStatus();
 }
 
@@ -256,13 +268,8 @@ void MainWindow::showOfflineGame()
 
 void MainWindow::connectToServer()
 {
-    if (tcpClient_->isConnected()) {
-        QMessageBox::information(this, "提示", "已经连接到服务器");
-        return;
-    }
-
-    qDebug() << "Connecting to server...";
-    tcpClient_->connectToServer("127.0.0.1", 8888);
+    qDebug() << "Connecting to server at 192.168.215.125:8888...";
+    tcpClient_->connectToServer("192.168.215.125", 8888);
 }
 
 void MainWindow::updateConnectionStatus()
@@ -271,9 +278,15 @@ void MainWindow::updateConnectionStatus()
     if (connected) {
         ui_->statusLabel->setText("已连接");
         ui_->statusLabel->setProperty("connected", true);
+        // 连接成功时，显示登录和开始游戏按钮
+        ui_->loginButton->setVisible(true);
+        ui_->loginButton->setEnabled(true);
     } else {
         ui_->statusLabel->setText("未连接");
         ui_->statusLabel->setProperty("connected", false);
+        // 连接失败时，只显示开始游戏按钮
+        ui_->loginButton->setVisible(false);
+        ui_->loginButton->setEnabled(false);
     }
     // 重新应用样式
     ui_->statusLabel->style()->unpolish(ui_->statusLabel);
