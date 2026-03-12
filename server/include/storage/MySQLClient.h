@@ -109,6 +109,9 @@ public:
     // 执行更新（自动获取和释放连接）
     int execute(const std::string& sql);
     
+    // 获取最后插入的ID
+    int getLastInsertId();
+    
     // 执行事务
     bool transaction(std::function<bool(MySQLConnection* conn)> callback);
 

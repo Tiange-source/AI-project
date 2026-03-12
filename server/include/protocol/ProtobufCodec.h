@@ -13,12 +13,10 @@ class TcpConnection;
 class Buffer;
 
 // 前向声明protobuf消息类型
-namespace gomoku {
 class LoginRequest;
 class LoginResponse;
 class RegisterRequest;
 class RegisterResponse;
-}
 
 // Protobuf编解码器
 class ProtobufCodec {
@@ -87,7 +85,7 @@ private:
     static std::unordered_map<int, std::string> messageTypeNames_;
     
     static const int kHeaderLen = sizeof(int32_t) + sizeof(int32_t);  // [长度][类型]
-    static const int kMaxMessageLen = 64 * 1024 * 1024;  // 64MB
+    static const int kMaxMessageLen = 64 * 1024 * 1024;  // 64MB;
 };
 
 } // namespace gomoku

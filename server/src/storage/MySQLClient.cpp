@@ -349,6 +349,17 @@ int MySQLClient::execute(const std::string& sql) {
     return affectedRows;
 }
 
+int MySQLClient::getLastInsertId() {
+    auto conn = getConnection();
+    if (!conn) {
+        return -1;
+    }
+    
+    int lastId = conn->getLastInsertId();
+    releaseConnection(conn);
+    return lastId;
+}
+
 bool MySQLClient::transaction(std::function<bool(MySQLConnection* conn)> callback) {
     auto conn = getConnection();
     if (!conn) {

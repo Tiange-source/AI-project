@@ -132,8 +132,8 @@ void ProtobufCodec::decode(const std::shared_ptr<TcpConnection>& conn, Buffer* b
     }
 }
 
-bool ProtobufCodec::checkComplete(const char* data, size_t len, size_t* messageLen) {
-    if (len < kHeaderLen) {
+bool ProtobufCodec::checkComplete(const char* data, size_t dataLen, size_t* messageLen) {
+    if (dataLen < kHeaderLen) {
         return false;
     }
     
@@ -149,7 +149,7 @@ bool ProtobufCodec::checkComplete(const char* data, size_t len, size_t* messageL
         return false;
     }
     
-    return (len + kHeaderLen) <= len;
+    return (len + kHeaderLen) <= dataLen;
 }
 
 int ProtobufCodec::getMessageType(const google::protobuf::Message& message) {
