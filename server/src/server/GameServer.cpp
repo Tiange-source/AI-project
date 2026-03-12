@@ -71,14 +71,23 @@ bool GameServer::loadConfig(const std::string& configFile) {
 bool GameServer::initialize() {
     // 初始化MySQL客户端
     mysqlClient_.reset(new MySQLClient());
-    if (!mysqlClient_->connect(mysqlHost_, mysqlPort_, mysqlUser_, mysqlPassword_, mysqlDatabase_)) {
+    MySQLConfig mysqlConfig;
+    mysqlConfig.host = mysqlHost_;
+    mysqlConfig.port = mysqlPort_;
+    mysqlConfig.username = mysqlUser_;
+    mysqlConfig.password = mysqlPassword_;
+    mysqlConfig.database = mysqlDatabase_;
+    if (!mysqlClient_->initialize(mysqlConfig)) {
         LOG_ERROR("GameServer::initialize - failed to connect to MySQL");
         return false;
     }
     
     // 初始化Redis客户端
     redisClient_.reset(new RedisClient());
-    if (!redisClient_->connect(redisHost_, redisPort_)) {
+    RedisConfig redisConfig;
+    redisConfig.host = redisHost_;
+    redisConfig.port = redisPort_;
+    if (!redisClient_->initialize(redisConfig)) {
         LOG_ERROR("GameServer::initialize - failed to connect to Redis");
         return false;
     }
@@ -132,7 +141,7 @@ bool GameServer::initialize() {
     // 这里简化处理，实际应该为每个消息类型注册处理器
     
     // 创建Acceptor
-    acceptor_.reset(new Acceptor(&eventLoop_, port_));
+    acceptor_.reset(new Acceptor(&eventLoop_, "0.0.0.0", port_));
     acceptor_->setNewConnectionCallback(
         [this](int sockfd, const std::string& peerIp, uint16_t peerPort) {
             this->onNewConnection(sockfd, peerIp, peerPort);
@@ -164,11 +173,11 @@ void GameServer::stop() {
 void GameServer::onNewConnection(int sockfd, const std::string& peerIp, uint16_t peerPort) {
     int connId = sockfd; // 简化：使用sockfd作为connId
     
-    TcpConnectionPtr conn = std::make_shared<TcpConnection>(&eventLoop_, connId, sockfd);
+    TcpConnectionPtr conn = std::make_shared<TcpConnection>(&eventLoop_, std::string("conn_") + std::to_string(connId), sockfd, peerIp, peerPort);
     
     // 设置回调
-    conn->setCloseCallback([this, connId]() { this->onConnectionClosed(conn); });
-    conn->setMessageCallback([this, conn](Buffer* buffer) { this->onMessage(conn, buffer); });
+    conn->setCloseCallback([this](const TcpConnectionPtr& conn) { this->onConnectionClosed(conn); });
+    conn->setMessageCallback([this](const TcpConnectionPtr& conn, Buffer* buffer) { this->onMessage(conn, buffer); });
     
     // 建立连接
     conn->connectEstablished();
@@ -295,15 +304,28 @@ void GameServer::routeMessage(int userId, const ProtobufMessagePtr& message) {
 
 void GameServer::handleLogin(int connId, const std::string& username, const std::string& password) {
     // 调用UserManager进行登录验证
-    UserInfo userInfo;
+    InternalUserInfo userInfo;
     std::string token;
     bool success = userManager_->login(username, password, userInfo, token);
     
-    // 构造响应
-    std::ostringstream response;
+    // 创建Protobuf响应
+    gomoku::LoginResponse response;
+    response.set_success(success);
+    
     if (success) {
-        response << "LOGIN_RESPONSE:success:" << userInfo.userId << ":" 
-                << userInfo.nickname << ":" << token;
+        response.set_token(token);
+        
+        // 设置用户信息
+        auto* user_info = response.mutable_user_info();
+        user_info->set_user_id(userInfo.userId);
+        user_info->set_username(userInfo.username);
+        user_info->set_nickname(userInfo.nickname);
+        user_info->set_avatar_url(userInfo.avatarUrl);
+        user_info->set_win_count(userInfo.winCount);
+        user_info->set_lose_count(userInfo.loseCount);
+        user_info->set_draw_count(userInfo.drawCount);
+        user_info->set_rating(userInfo.rating);
+        user_info->set_total_games(userInfo.totalGames);
         
         // 保存userId和connId的映射
         connIdToUserId_[connId] = userInfo.userId;
@@ -311,36 +333,63 @@ void GameServer::handleLogin(int connId, const std::string& username, const std:
         
         LOG_INFO("User login success: " + username);
     } else {
-        response << "LOGIN_RESPONSE:fail:Invalid username or password";
+        response.set_error_msg("Invalid username or password");
         LOG_INFO("User login failed: " + username);
     }
     
-    // 发送响应
-    broadcast(userInfo.userId, response.str());
+    // 使用ProtobufCodec编码并发送响应
+    ProtobufCodec codec;
+    std::string encoded = codec.encode(response);
+    
+    // 发送给对应的连接
+    auto it = connections_.find(connId);
+    if (it != connections_.end()) {
+        it->second->send(encoded);
+    }
 }
 
 void GameServer::handleRegister(int connId, const std::string& username, const std::string& password,
                                  const std::string& email, const std::string& nickname) {
     // 调用UserManager进行注册
-    UserInfo userInfo;
+    InternalUserInfo userInfo;
     bool success = userManager_->registerUser(username, password, email, nickname, userInfo);
     
-    // 构造响应
-    std::ostringstream response;
+    // 创建Protobuf响应
+    gomoku::RegisterResponse response;
+    response.set_success(success);
+    
     if (success) {
-        response << "REGISTER_RESPONSE:success:" << userInfo.userId << ":" << userInfo.nickname;
+        // 设置用户信息
+        auto* user_info = response.mutable_user_info();
+        user_info->set_user_id(userInfo.userId);
+        user_info->set_username(userInfo.username);
+        user_info->set_nickname(userInfo.nickname);
+        user_info->set_avatar_url(userInfo.avatarUrl);
+        user_info->set_win_count(userInfo.winCount);
+        user_info->set_lose_count(userInfo.loseCount);
+        user_info->set_draw_count(userInfo.drawCount);
+        user_info->set_rating(userInfo.rating);
+        user_info->set_total_games(userInfo.totalGames);
+        
         LOG_INFO("User register success: " + username);
     } else {
-        response << "REGISTER_RESPONSE:fail:Username already exists";
+        response.set_error_msg("Username already exists");
         LOG_INFO("User register failed: " + username);
     }
     
-    // 发送响应（发送给所有连接，简化处理）
-    broadcastToAll(response.str());
+    // 使用ProtobufCodec编码并发送响应
+    ProtobufCodec codec;
+    std::string encoded = codec.encode(response);
+    
+    // 发送给对应的连接
+    auto it = connections_.find(connId);
+    if (it != connections_.end()) {
+        it->second->send(encoded);
+    }
 }
 
 void GameServer::handleCreateRoom(int userId, const std::string& roomName, const std::string& password) {
-    RoomInfo roomInfo;
+    InternalRoomInfo roomInfo;
     bool success = roomManager_->createRoom(userId, roomName, password, roomInfo);
     
     std::ostringstream response;
@@ -355,7 +404,7 @@ void GameServer::handleCreateRoom(int userId, const std::string& roomName, const
 }
 
 void GameServer::handleJoinRoom(int userId, const std::string& roomId, const std::string& password) {
-    RoomInfo roomInfo;
+    InternalRoomInfo roomInfo;
     bool success = roomManager_->joinRoom(userId, roomId, password, roomInfo);
     
     std::ostringstream response;
@@ -388,7 +437,7 @@ void GameServer::handleLeaveRoom(int userId) {
 
 void GameServer::handleStartGame(int userId) {
     // 获取用户所在的房间
-    RoomInfo roomInfo;
+    InternalRoomInfo roomInfo;
     // 简化处理，实际需要从Redis查询用户所在的房间
     
     std::ostringstream response;
@@ -412,7 +461,7 @@ void GameServer::handleMove(int userId, int row, int col) {
     gameController_->makeMove(row, col, userId);
     
     // 检查胜负
-    if (gameController_->checkWin(row, col, userId)) {
+    if (gameController_->checkWin(row, col, userId) == GameResult::WIN) {
         std::ostringstream gameOver;
         gameOver << "GAME_OVER:" << userId << ":FIVE_IN_ROW";
         broadcastToAll(gameOver.str());
@@ -494,7 +543,20 @@ void GameServer::handleRankList(int userId, RankType type, int offset, int limit
     response << "RANK_LIST_RESPONSE:success:";
     
     for (const auto& entry : entries) {
-        response << entry.userId << ":" << entry.nickname << ":" << entry.value << ";";
+        switch (type) {
+            case 0: // 胜场数
+                response << entry.userId << ":" << entry.nickname << ":" << entry.winCount << ";";
+                break;
+            case 1: // 积分
+                response << entry.userId << ":" << entry.nickname << ":" << entry.rating << ";";
+                break;
+            case 2: // 胜率
+                response << entry.userId << ":" << entry.nickname << ":" << (entry.totalGames > 0 ? (entry.winCount * 100.0 / entry.totalGames) : 0) << ";";
+                break;
+            default:
+                response << entry.userId << ":" << entry.nickname << ":" << entry.rating << ";";
+                break;
+        }
     }
     
     broadcast(userId, response.str());
@@ -507,14 +569,14 @@ void GameServer::broadcast(int userId, const std::string& message) {
         auto connIt = connections_.find(connId);
         if (connIt != connections_.end()) {
             // 使用ProtobufCodec编码消息
-            std::string encoded = ProtobufCodec::encode(MessageType::LOGIN_RESPONSE, message);
+            std::string encoded = message;
             connIt->second->send(encoded);
         }
     }
 }
 
 void GameServer::broadcastToRoom(const std::string& roomId, const std::string& message) {
-    RoomInfo roomInfo;
+    InternalRoomInfo roomInfo;
     if (!roomManager_->getRoomInfo(roomId, roomInfo)) {
         return;
     }
