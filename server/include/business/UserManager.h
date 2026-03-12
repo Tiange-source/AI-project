@@ -15,6 +15,7 @@ struct InternalUserInfo {
     std::string username;
     std::string nickname;
     std::string avatarUrl;
+    std::string passwordHash;
     int winCount;
     int loseCount;
     int drawCount;
@@ -42,6 +43,9 @@ public:
     // 用户登出
     bool logout(int userId, const std::string& token);
     
+    // 连接关闭时的登出（不需要token验证）
+    bool logout(int userId);
+    
     // 添加在线用户
     void addOnlineUser(int userId, const InternalUserInfo& info, const std::string& token);
     
@@ -62,6 +66,9 @@ public:
     
     // 更新战绩
     bool updateStats(int userId, bool isWin, int steps = 0);
+    
+    // 获取排行榜
+    std::vector<InternalUserInfo> getRankList(int type, int limit = 10);
     
     // 获取在线用户列表
     std::vector<InternalUserInfo> getOnlineUsers();

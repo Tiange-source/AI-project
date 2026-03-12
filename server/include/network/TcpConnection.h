@@ -57,6 +57,8 @@ public:
     const std::string& clientIp() const;
     int clientPort() const;
     bool connected() const;
+    
+    int getConnId() const;
 
     // 设置回调
     void setConnectionCallback(const ConnectionCallback& cb);
@@ -87,6 +89,7 @@ private:
     std::unique_ptr<Channel> channel_;
     std::string clientIp_;
     int clientPort_;
+    int connId_;
 
     Buffer inputBuffer_;
     Buffer outputBuffer_;

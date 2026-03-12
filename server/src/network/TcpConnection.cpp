@@ -15,7 +15,8 @@ TcpConnection::TcpConnection(EventLoop* loop, const std::string& name, int sockf
       socket_(new Socket(sockfd)),
       channel_(new Channel(loop, sockfd)),
       clientIp_(clientIp),
-      clientPort_(clientPort) {
+      clientPort_(clientPort),
+      connId_(0) {
 
     channel_->setReadCallback([this]() { this->handleRead(); });
     channel_->setWriteCallback([this]() { this->handleWrite(); });
@@ -106,7 +107,19 @@ void TcpConnection::handleClose() {
     loop_->assertInLoopThread();
     LOG_INFO("TcpConnection::handleClose fd = " + std::to_string(channel_->fd()) + " state = " + std::to_string(state_));
     
-    assert(state_ == kConnected || state_ == kDisconnecting);
+    // 如果连接已经关闭，直接返回，避免重复关闭
+    if (state_ == kDisconnected) {
+        LOG_WARN("TcpConnection::handleClose - connection already closed, fd = " + std::to_string(channel_->fd()));
+        return;
+    }
+    
+    // 只有在连接中或正在断开时才能继续关闭
+    if (state_ != kConnected && state_ != kDisconnecting) {
+        LOG_WARN("TcpConnection::handleClose - invalid state: " + std::to_string(state_) + ", fd = " + std::to_string(channel_->fd()));
+        setState(kDisconnected);
+        return;
+    }
+    
     setState(kDisconnected);
     channel_->disableAll();
     
@@ -276,6 +289,10 @@ TcpConnection::StateE TcpConnection::state() {
 
 void TcpConnection::setState(StateE s) {
     state_ = s;
+}
+
+int TcpConnection::getConnId() const {
+    return connId_;
 }
 
 } // namespace gomoku

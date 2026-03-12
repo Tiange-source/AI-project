@@ -27,14 +27,14 @@ bool SpectatorManager::addSpectator(const std::string& roomId, int userId) {
     std::lock_guard<std::mutex> lock(mutex_);
     
     // 检查房间是否存在
-    RoomInfo roomInfo;
+    InternalRoomInfo roomInfo;
     if (!roomManager_->getRoomInfo(roomId, roomInfo)) {
         LOG_WARN("SpectatorManager::addSpectator - room not found: " + roomId);
         return false;
     }
     
     // 检查房间是否正在游戏中
-    if (roomInfo.state != RoomState::GAMING) {
+    if (roomInfo.state != InternalRoomState::GAMING) {
         LOG_WARN("SpectatorManager::addSpectator - room not in gaming state: " + roomId);
         return false;
     }

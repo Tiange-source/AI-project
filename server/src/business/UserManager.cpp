@@ -4,6 +4,7 @@
 #include <random>
 #include <ctime>
 #include <cstring>
+#include <iomanip>
 
 namespace gomoku {
 
@@ -26,25 +27,25 @@ bool UserManager::initialize(MySQLClient* mysql, RedisClient* redis) {
     return true;
 }
 
-int UserManager::login(const std::string& username, const std::string& password, 
+int UserManager::login(const std::string& username, const std::string& password,
                        InternalUserInfo& userInfo, std::string& token) {
     std::lock_guard<std::mutex> lock(mutex_);
-    
+
     // 从数据库查询用户
     InternalUserInfo info;
     if (!loadUserFromDB(username, info)) {
         LOG_WARN("UserManager::login - user not found: " + username);
         return -1;
     }
-    
+
     // 验证密码
     // 注意：实际项目中应该使用bcrypt等安全哈希算法
-    // 这里简化处理
-    if (!validatePassword(password, "stored_password_hash")) {
+    // 这里简化处理，使用从数据库加载的密码哈希
+    if (!validatePassword(password, info.passwordHash)) {
         LOG_WARN("UserManager::login - password incorrect for user: " + username);
         return -1;
     }
-    
+
     // 生成Token
     token = generateToken(info.userId);
     
@@ -109,6 +110,16 @@ bool UserManager::logout(int userId, const std::string& token) {
     removeOnlineUser(userId);
     
     LOG_INFO("UserManager::logout - user logged out: ID " + std::to_string(userId));
+    return true;
+}
+
+bool UserManager::logout(int userId) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    
+    // 从在线用户中移除（不验证token）
+    removeOnlineUser(userId);
+    
+    LOG_INFO("UserManager::logout - user logged out (connection closed): ID " + std::to_string(userId));
     return true;
 }
 
@@ -250,9 +261,10 @@ bool UserManager::isUserOnline(int userId) {
 }
 
 bool UserManager::validatePassword(const std::string& input, const std::string& stored) {
-    // 简化实现：实际应该使用bcrypt
-    // 这里只做示例
-    return !input.empty();
+    // 简化实现：实际应该使用bcrypt等安全哈希算法
+    // 这里简化处理，直接比较明文密码和存储的密码哈希
+    // 注意：这只是示例，实际项目中不应该使用明文密码存储
+    return input == stored;
 }
 
 std::string UserManager::generateToken(int userId) {
@@ -273,7 +285,7 @@ std::string UserManager::generateToken(int userId) {
 
 bool UserManager::loadUserFromDB(int userId, InternalUserInfo& info) {
     std::ostringstream sql;
-    sql << "SELECT user_id, username, nickname, avatar_url, win_count, lose_count, "
+    sql << "SELECT user_id, username, nickname, avatar_url, password_hash, win_count, lose_count, "
         << "draw_count, rating, total_games FROM users WHERE user_id = " << userId;
     
     auto result = mysql_->query(sql.str());
@@ -286,11 +298,12 @@ bool UserManager::loadUserFromDB(int userId, InternalUserInfo& info) {
         info.username = result->getString(1);
         info.nickname = result->getString(2);
         info.avatarUrl = result->getString(3);
-        info.winCount = result->getInt(4);
-        info.loseCount = result->getInt(5);
-        info.drawCount = result->getInt(6);
-        info.rating = result->getInt(7);
-        info.totalGames = result->getInt(8);
+        info.passwordHash = result->getString(4);
+        info.winCount = result->getInt(5);
+        info.loseCount = result->getInt(6);
+        info.drawCount = result->getInt(7);
+        info.rating = result->getInt(8);
+        info.totalGames = result->getInt(9);
         return true;
     }
     
@@ -299,7 +312,7 @@ bool UserManager::loadUserFromDB(int userId, InternalUserInfo& info) {
 
 bool UserManager::loadUserFromDB(const std::string& username, InternalUserInfo& info) {
     std::ostringstream sql;
-    sql << "SELECT user_id, username, nickname, avatar_url, win_count, lose_count, "
+    sql << "SELECT user_id, username, nickname, avatar_url, password_hash, win_count, lose_count, "
         << "draw_count, rating, total_games FROM users WHERE username = '" << username << "'";
     
     auto result = mysql_->query(sql.str());
@@ -312,11 +325,12 @@ bool UserManager::loadUserFromDB(const std::string& username, InternalUserInfo& 
         info.username = result->getString(1);
         info.nickname = result->getString(2);
         info.avatarUrl = result->getString(3);
-        info.winCount = result->getInt(4);
-        info.loseCount = result->getInt(5);
-        info.drawCount = result->getInt(6);
-        info.rating = result->getInt(7);
-        info.totalGames = result->getInt(8);
+        info.passwordHash = result->getString(4);
+        info.winCount = result->getInt(5);
+        info.loseCount = result->getInt(6);
+        info.drawCount = result->getInt(7);
+        info.rating = result->getInt(8);
+        info.totalGames = result->getInt(9);
         return true;
     }
     
@@ -392,6 +406,50 @@ bool UserManager::getUserFromRedis(int userId, InternalUserInfo& info) {
     }
     
     return true;
+}
+
+
+std::vector<InternalUserInfo> UserManager::getRankList(int type, int limit) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    
+    std::vector<InternalUserInfo> result;
+    std::ostringstream sql;
+    
+    switch (type) {
+        case 0: // 胜场数
+            sql << "SELECT * FROM users ORDER BY win_count DESC LIMIT " << limit;
+            break;
+        case 1: // 积分
+            sql << "SELECT * FROM users ORDER BY rating DESC LIMIT " << limit;
+            break;
+        case 2: // 胜率
+            sql << "SELECT * FROM users ORDER BY (win_count * 100.0 / NULLIF(total_games, 0)) DESC LIMIT " << limit;
+            break;
+        default:
+            sql << "SELECT * FROM users ORDER BY rating DESC LIMIT " << limit;
+            break;
+    }
+    
+    auto mysqlResult = mysql_->query(sql.str());
+    if (!mysqlResult) {
+        LOG_ERROR("UserManager::getRankList - failed to query database");
+        return result;
+    }
+    
+    while (mysqlResult->next()) {
+        InternalUserInfo info;
+        info.userId = mysqlResult->getInt("user_id");
+        info.username = mysqlResult->getString("username");
+        info.nickname = mysqlResult->getString("nickname");
+        info.winCount = mysqlResult->getInt("win_count");
+        info.loseCount = mysqlResult->getInt("lose_count");
+        info.drawCount = mysqlResult->getInt("draw_count");
+        info.rating = mysqlResult->getInt("rating");
+        info.totalGames = mysqlResult->getInt("total_games");
+        result.push_back(info);
+    }
+    
+    return result;
 }
 
 } // namespace gomoku

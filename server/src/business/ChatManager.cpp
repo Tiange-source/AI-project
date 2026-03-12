@@ -34,7 +34,7 @@ bool ChatManager::sendLobbyChat(int senderId, const std::string& content) {
     std::lock_guard<std::mutex> lock(mutex_);
     
     // 获取发送者信息
-    UserInfo senderInfo;
+    InternalUserInfo senderInfo;
     if (!userManager_->getUserInfo(senderId, senderInfo)) {
         LOG_WARN("ChatManager::sendLobbyChat - sender not found: " + std::to_string(senderId));
         return false;
@@ -73,7 +73,7 @@ bool ChatManager::sendPrivateChat(int senderId, int receiverId, const std::strin
     std::lock_guard<std::mutex> lock(mutex_);
     
     // 获取发送者信息
-    UserInfo senderInfo;
+    InternalUserInfo senderInfo;
     if (!userManager_->getUserInfo(senderId, senderInfo)) {
         LOG_WARN("ChatManager::sendPrivateChat - sender not found: " + std::to_string(senderId));
         return false;
@@ -115,14 +115,14 @@ bool ChatManager::sendRoomChat(int senderId, const std::string& roomId, const st
     std::lock_guard<std::mutex> lock(mutex_);
     
     // 获取发送者信息
-    UserInfo senderInfo;
+    InternalUserInfo senderInfo;
     if (!userManager_->getUserInfo(senderId, senderInfo)) {
         LOG_WARN("ChatManager::sendRoomChat - sender not found: " + std::to_string(senderId));
         return false;
     }
     
     // 检查房间是否存在
-    RoomInfo roomInfo;
+    InternalRoomInfo roomInfo;
     if (!roomManager_->getRoomInfo(roomId, roomInfo)) {
         LOG_WARN("ChatManager::sendRoomChat - room not found: " + roomId);
         return false;

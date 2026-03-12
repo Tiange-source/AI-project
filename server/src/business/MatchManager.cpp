@@ -146,7 +146,7 @@ bool MatchManager::createMatchRoom(int user1, int user2, std::string& roomId) {
     std::string roomName = "匹配房间-" + std::to_string(dis(gen));
     
     // 创建房间
-    RoomInfo roomInfo;
+    InternalRoomInfo roomInfo;
     if (!roomManager_->createRoom(user1, roomName, "", roomInfo)) {
         LOG_ERROR("MatchManager::createMatchRoom - failed to create room");
         return false;
@@ -155,7 +155,7 @@ bool MatchManager::createMatchRoom(int user1, int user2, std::string& roomId) {
     roomId = roomInfo.roomId;
     
     // 第二个玩家加入
-    RoomInfo joinInfo;
+    InternalRoomInfo joinInfo;
     if (!roomManager_->joinRoom(user2, roomId, "", joinInfo)) {
         LOG_ERROR("MatchManager::createMatchRoom - failed to join room");
         return false;
@@ -169,7 +169,7 @@ void MatchManager::notifyMatchSuccess(int user1, int user2, const std::string& r
     std::ostringstream msg1, msg2;
     
     // 获取对手信息
-    UserInfo opponent1, opponent2;
+    InternalUserInfo opponent1, opponent2;
     if (userManager_->getUserInfo(user2, opponent1)) {
         msg1 << "MATCH_SUCCESS:" << roomId << ":" << opponent1.nickname;
     } else {

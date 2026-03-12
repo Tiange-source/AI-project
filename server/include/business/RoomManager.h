@@ -55,6 +55,9 @@ public:
     // 离开房间
     bool leaveRoom(int userId, const std::string& roomId);
     
+    // 连接关闭时的离开房间（需要从用户ID查找房间）
+    bool leaveRoom(int userId);
+    
     // 关闭房间
     bool closeRoom(const std::string& roomId);
     

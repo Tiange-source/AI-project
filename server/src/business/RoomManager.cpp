@@ -3,6 +3,7 @@
 #include <sstream>
 #include <random>
 #include <ctime>
+#include <algorithm>
 
 namespace gomoku {
 
@@ -184,6 +185,21 @@ bool RoomManager::leaveRoom(int userId, const std::string& roomId) {
     
     LOG_INFO("RoomManager::leaveRoom - user " + std::to_string(userId) + " left room " + roomId);
     return true;
+}
+
+bool RoomManager::leaveRoom(int userId) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    
+    // 查找用户所在的房间
+    for (auto& pair : rooms_) {
+        const InternalRoomInfo& info = pair.second;
+        if (info.player1 == userId || info.player2 == userId) {
+            return leaveRoom(userId, info.roomId);
+        }
+    }
+    
+    LOG_INFO("RoomManager::leaveRoom - user " + std::to_string(userId) + " not in any room");
+    return false;
 }
 
 bool RoomManager::closeRoom(const std::string& roomId) {
