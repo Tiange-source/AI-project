@@ -42,6 +42,7 @@ void TcpClient::connectToServer(const QString& host, quint16 port)
     buffer_.clear();
 
     qDebug() << "Connecting to server:" << host << ":" << port;
+
     socket_->connectToHost(host, port);
 }
 

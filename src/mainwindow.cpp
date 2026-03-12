@@ -249,7 +249,19 @@ void MainWindow::onDisconnected()
 void MainWindow::onConnectionError(const QString& error)
 {
     qDebug() << "Connection error:" << error;
+    qWarning() << "Failed to connect to server 192.168.215.125:8888:" << error;
     updateConnectionStatus();
+
+    // 显示连接失败的原因
+    QMessageBox::warning(this, "连接失败",
+                        "无法连接到服务器 192.168.215.125:8888\n\n"
+                        "错误信息: " + error + "\n\n"
+                        "可能的原因:\n"
+                        "1. 服务器未启动\n"
+                        "2. 网络不可达\n"
+                        "3. 防火墙阻止连接\n"
+                        "4. 服务器地址或端口错误\n\n"
+                        "当前只能使用离线游戏功能。");
 }
 
 void MainWindow::showLoginDialog()
