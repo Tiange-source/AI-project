@@ -12,6 +12,7 @@
 #include "logic/aiengine.h"
 #include "ui/titlebar.h"
 #include "ui/offlinegamedialog.h"
+#include "gomoku.pb.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -105,6 +106,11 @@ private:
      * @brief 更新连接状态UI
      */
     void updateConnectionStatus();
+
+    /**
+     * @brief 发送测试登录请求以保持连接
+     */
+    void sendTestLoginRequest();
 };
 
 #endif // MAINWINDOW_H

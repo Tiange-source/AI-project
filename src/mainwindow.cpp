@@ -238,6 +238,9 @@ void MainWindow::onConnected()
 {
     qDebug() << "Connected to server";
     updateConnectionStatus();
+
+    // 发送测试登录请求以保持连接
+    sendTestLoginRequest();
 }
 
 void MainWindow::onDisconnected()
@@ -303,4 +306,21 @@ void MainWindow::updateConnectionStatus()
     // 重新应用样式
     ui_->statusLabel->style()->unpolish(ui_->statusLabel);
     ui_->statusLabel->style()->polish(ui_->statusLabel);
+}
+
+void MainWindow::sendTestLoginRequest()
+{
+    qDebug() << "Sending test login request to keep connection alive";
+
+    // 创建测试登录请求
+    gomoku::LoginRequest loginRequest;
+    loginRequest.set_username("test_user");
+    loginRequest.set_password("test_password");
+
+    // 发送消息
+    if (tcpClient_->sendMessage(loginRequest, gomoku::MessageType::LOGIN_REQUEST)) {
+        qDebug() << "Test login request sent successfully";
+    } else {
+        qWarning() << "Failed to send test login request";
+    }
 }
