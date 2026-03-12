@@ -8,7 +8,7 @@
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui_(new Ui::MainWindow)
-    , tcpClient_(nullptr)
+    , windowsSocket_(nullptr)
     , dispatcher_(nullptr)
     , userProfile_(UserProfile::create())
     , titleBar_(nullptr)
@@ -46,27 +46,29 @@ MainWindow::MainWindow(QWidget* parent)
 
 MainWindow::~MainWindow()
 {
-    if (tcpClient_) {
-        tcpClient_->disconnectFromServer();
+    if (windowsSocket_) {
+        windowsSocket_->disconnectFromServer();
+        delete windowsSocket_;
+        windowsSocket_ = nullptr;
     }
     delete ui_;
 }
 
 void MainWindow::initNetwork()
 {
-    // 创建TCP客户端
-    tcpClient_ = new TcpClient(this);
+    // 创建Windows Socket客户端
+    windowsSocket_ = new WindowsSocket(this);
 
     // 创建消息分发器
     dispatcher_ = new MessageDispatcher(this);
 
     // 设置消息分发器
-    tcpClient_->setMessageDispatcher(dispatcher_);
+    windowsSocket_->setMessageDispatcher(dispatcher_);
 
     // 连接信号
-    connect(tcpClient_, &TcpClient::connected, this, &MainWindow::onConnected);
-    connect(tcpClient_, &TcpClient::disconnected, this, &MainWindow::onDisconnected);
-    connect(tcpClient_, &TcpClient::connectionError, this, &MainWindow::onConnectionError);
+    connect(windowsSocket_, &WindowsSocket::connected, this, &MainWindow::onConnected);
+    connect(windowsSocket_, &WindowsSocket::disconnected, this, &MainWindow::onDisconnected);
+    connect(windowsSocket_, &WindowsSocket::connectionError, this, &MainWindow::onConnectionError);
 
     qDebug() << "Network initialized";
 }
@@ -117,8 +119,8 @@ void MainWindow::initUI()
 
     connect(ui_->actionDisconnect, &QAction::triggered, this, [this]() {
         qDebug() << "Disconnect from server";
-        if (tcpClient_->isConnected()) {
-            tcpClient_->disconnectFromServer();
+        if (windowsSocket_->isConnected()) {
+            windowsSocket_->disconnectFromServer();
         }
     });
 
@@ -284,12 +286,12 @@ void MainWindow::showOfflineGame()
 void MainWindow::connectToServer()
 {
     qDebug() << "Connecting to server at 192.168.215.125:8888...";
-    tcpClient_->connectToServer("192.168.215.125", 8888);
+    windowsSocket_->connectToServer("192.168.215.125", 8888);
 }
 
 void MainWindow::updateConnectionStatus()
 {
-    bool connected = tcpClient_->isConnected();
+    bool connected = windowsSocket_->isConnected();
     if (connected) {
         ui_->statusLabel->setText("已连接");
         ui_->statusLabel->setProperty("connected", true);
@@ -318,7 +320,7 @@ void MainWindow::sendTestLoginRequest()
     loginRequest.set_password("test_password");
 
     // 发送消息
-    if (tcpClient_->sendMessage(loginRequest, gomoku::MessageType::LOGIN_REQUEST)) {
+    if (windowsSocket_->sendMessage(loginRequest, gomoku::MessageType::LOGIN_REQUEST)) {
         qDebug() << "Test login request sent successfully";
     } else {
         qWarning() << "Failed to send test login request";

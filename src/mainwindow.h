@@ -5,7 +5,7 @@
 #include <QSharedPointer>
 #include <QFile>
 #include <QGraphicsDropShadowEffect>
-#include "network/tcpclient.h"
+#include "network/windowssocket.h"
 #include "network/messagedispatcher.h"
 #include "data/userprofile.h"
 #include "logic/gamecontroller.h"
@@ -50,7 +50,7 @@ private slots:
 
 private:
     Ui::MainWindow* ui_;
-    TcpClient* tcpClient_;
+    WindowsSocket* windowsSocket_;
     MessageDispatcher* dispatcher_;
     QSharedPointer<UserProfile> userProfile_;
     TitleBar* titleBar_;

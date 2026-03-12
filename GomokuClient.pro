@@ -39,7 +39,7 @@ SOURCES += \
     $$SRC_DIR/ui/logindialog.cpp \
     $$SRC_DIR/ui/offlinegamedialog.cpp \
     $$SRC_DIR/ui/boardwidget.cpp \
-    $$SRC_DIR/network/tcpclient.cpp \
+    $$SRC_DIR/network/windowssocket.cpp \
     $$SRC_DIR/network/protobufcodec.cpp \
     $$SRC_DIR/network/messagedispatcher.cpp \
     $$SRC_DIR/logic/gamecontroller.cpp \
@@ -54,7 +54,7 @@ HEADERS += \
     $$SRC_DIR/ui/logindialog.h \
     $$SRC_DIR/ui/offlinegamedialog.h \
     $$SRC_DIR/ui/boardwidget.h \
-    $$SRC_DIR/network/tcpclient.h \
+    $$SRC_DIR/network/windowssocket.h \
     $$SRC_DIR/network/protobufcodec.h \
     $$SRC_DIR/network/messagedispatcher.h \
     $$SRC_DIR/logic/gamecontroller.h \
@@ -115,6 +115,9 @@ win32 {
     # 设置编码（MinGW使用-exec-charset和-input-charset）
     QMAKE_CXXFLAGS += -finput-charset=UTF-8 -fexec-charset=UTF-8
     QMAKE_CFLAGS += -finput-charset=UTF-8 -fexec-charset=UTF-8
+    
+    # 链接Windows Socket库
+    LIBS += -lws2_32
 } else {
     # Unix/Linux/Mac配置
     DESTDIR = $$BUILD_DIR
