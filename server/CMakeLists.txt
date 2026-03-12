@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(gomoku_server VERSION 1.0.0 LANGUAGES CXX)
 
-# C++11标准
-set(CMAKE_CXX_STANDARD 11)
+# C++14标准
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 编译选项
