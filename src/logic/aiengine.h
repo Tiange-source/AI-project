@@ -20,6 +20,7 @@ struct AIMove {
  * @brief AI引擎
  *
  * 使用五元组算法提供AI对战
+ * 参考开源项目的高效实现
  */
 class AIEngine : public QObject
 {
@@ -74,14 +75,22 @@ private:
     int getPoints(const int board[18][18], int x, int y, int ch);
 
     /**
+     * @brief 获取当前局势得分
+     * @param board 棋盘
+     * @param ch 评估对象
+     * @return 局势得分
+     */
+    double getNowPoints(const int board[18][18], int ch);
+
+    /**
      * @brief 检查位置是否有效
      */
-    bool isValidPosition(int x, int y) const;
+    bool isOk(int x, int y) const;
 
     /**
      * @brief 获取有效落子位置（周围有棋子的空位）
      */
-    QVector<AIMove> getValidMoves(const int board[18][18]);
+    QVector<AIMove> getValidMoves(const int board[18][18], int steps);
 
     /**
      * @brief 检查五子连珠

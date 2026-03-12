@@ -2,10 +2,13 @@
 #include <QDebug>
 #include <QRandomGenerator>
 #include <algorithm>
+#include <ctime>
 
 AIEngine::AIEngine(QObject* parent)
     : QObject(parent)
 {
+    // 初始化随机数种子
+    qsrand(static_cast<uint>(time(nullptr)));
 }
 
 AIEngine::~AIEngine()
@@ -14,7 +17,22 @@ AIEngine::~AIEngine()
 
 AIMove AIEngine::computeMove(const int board[18][18], int aiPlayer)
 {
-    QVector<AIMove> validMoves = getValidMoves(board);
+    // 如果是第一步，下在中心附近
+    int steps = 0;
+    for (int i = 0; i < 18; ++i) {
+        for (int j = 0; j < 18; ++j) {
+            if (board[i][j] != EMPTY) {
+                steps++;
+            }
+        }
+    }
+
+    if (steps == 0) {
+        // 第一步，下在中心
+        return AIMove(9, 9, 0);
+    }
+
+    QVector<AIMove> validMoves = getValidMoves(board, steps);
 
     if (validMoves.isEmpty()) {
         // 如果没有有效位置，返回中心位置
@@ -23,19 +41,25 @@ AIMove AIEngine::computeMove(const int board[18][18], int aiPlayer)
 
     // 评估每个位置的得分
     AIMove bestMove = validMoves[0];
-    int maxScore = -1;
+    int maxPoints = -1;
+
+    // 使用随机数种子
+    QRandomGenerator* rng = QRandomGenerator::global();
+
+    // 打乱顺序，避免每次都选择相同的位置
+    std::shuffle(validMoves.begin(), validMoves.end(), *rng);
 
     for (auto& move : validMoves) {
         // 计算该位置的得分（进攻得分+防守得分）
-        int attackScore = getPoints(board, move.row, move.col, BLACK);
-        int defenseScore = getPoints(board, move.row, move.col, WHITE);
+        int attackPoints = getPoints(board, move.row, move.col, BLACK);
+        int defensePoints = getPoints(board, move.row, move.col, WHITE);
 
         // 综合得分，优先选择得分最高的位置
-        int totalScore = attackScore + defenseScore;
-        move.score = totalScore;
+        int totalPoints = attackPoints + defensePoints;
+        move.score = totalPoints;
 
-        if (totalScore > maxScore) {
-            maxScore = totalScore;
+        if (totalPoints > maxPoints) {
+            maxPoints = totalPoints;
             bestMove = move;
         }
     }
@@ -45,167 +69,104 @@ AIMove AIEngine::computeMove(const int board[18][18], int aiPlayer)
 
 QVector<int> AIEngine::getNums1(const int board[18][18], int x, int y)
 {
-    // 水平方向：从该点开始，左右各延伸最多4格，形成一个五元组
-    int g = 0;  // 电脑棋子数（黑棋）
-    int b = 0;  // 玩家棋子数（白棋）
+    // 水平方向：向左延伸5格
+    int k = 0;  // 电脑棋子数（黑棋）
+    int t = 0;  // 玩家棋子数（白棋）
+    int cnt = 5;
 
-    // 向右延伸
-    for (int i = 0; i < 5 && isValidPosition(x, y + i); ++i) {
-        if (board[x][y + i] == BLACK) {
-            g++;
-        } else if (board[x][y + i] == WHITE) {
-            b++;
-        }
+    while (cnt-- && isOk(x, y)) {
+        if (board[x][y] == BLACK) k++;
+        if (board[x][y] == WHITE) t++;
+        y--;
     }
 
-    // 如果总棋子数超过5，需要从该点向左调整起点
-    int offset = 0;
-    if (g + b > 5) {
-        // 尝试向左移动起点
-        for (offset = 0; offset <= 4 && isValidPosition(x, y - offset); ++offset) {
-            int newG = 0;
-            int newB = 0;
-            for (int i = 0; i < 5 && isValidPosition(x, y - offset + i); ++i) {
-                if (board[x][y - offset + i] == BLACK) {
-                    newG++;
-                } else if (board[x][y - offset + i] == WHITE) {
-                    newB++;
-                }
-            }
-            if (newG + newB <= 5) {
-                g = newG;
-                b = newB;
-                break;
-            }
-        }
+    if (cnt >= 0) {
+        return QVector<int>();  // 超出边界，返回空
     }
 
-    return QVector<int>{g, b};
+    return QVector<int>{k, t};
 }
 
 QVector<int> AIEngine::getNums2(const int board[18][18], int x, int y)
 {
-    // 垂直方向
-    int g = 0;  // 电脑棋子数（黑棋）
-    int b = 0;  // 玩家棋子数（白棋）
+    // 垂直方向：向上延伸5格
+    int k = 0;  // 电脑棋子数（黑棋）
+    int t = 0;  // 玩家棋子数（白棋）
+    int cnt = 5;
 
-    // 向下延伸
-    for (int i = 0; i < 5 && isValidPosition(x + i, y); ++i) {
-        if (board[x + i][y] == BLACK) {
-            g++;
-        } else if (board[x + i][y] == WHITE) {
-            b++;
-        }
+    while (cnt-- && isOk(x, y)) {
+        if (board[x][y] == BLACK) k++;
+        if (board[x][y] == WHITE) t++;
+        x--;
     }
 
-    // 如果总棋子数超过5，需要从该点向上调整起点
-    int offset = 0;
-    if (g + b > 5) {
-        for (offset = 0; offset <= 4 && isValidPosition(x - offset, y); ++offset) {
-            int newG = 0;
-            int newB = 0;
-            for (int i = 0; i < 5 && isValidPosition(x - offset + i, y); ++i) {
-                if (board[x - offset + i][y] == BLACK) {
-                    newG++;
-                } else if (board[x - offset + i][y] == WHITE) {
-                    newB++;
-                }
-            }
-            if (newG + newB <= 5) {
-                g = newG;
-                b = newB;
-                break;
-            }
-        }
+    if (cnt >= 0) {
+        return QVector<int>();  // 超出边界，返回空
     }
 
-    return QVector<int>{g, b};
+    return QVector<int>{k, t};
 }
 
 QVector<int> AIEngine::getNums3(const int board[18][18], int x, int y)
 {
-    // 主对角线方向（左上到右下）
-    int g = 0;  // 电脑棋子数（黑棋）
-    int b = 0;  // 玩家棋子数（白棋）
+    // 主对角线方向（右下）：向左上延伸5格
+    int k = 0;  // 电脑棋子数（黑棋）
+    int t = 0;  // 玩家棋子数（白棋）
+    int cnt = 5;
 
-    // 向右下延伸
-    for (int i = 0; i < 5 && isValidPosition(x + i, y + i); ++i) {
-        if (board[x + i][y + i] == BLACK) {
-            g++;
-        } else if (board[x + i][y + i] == WHITE) {
-            b++;
-        }
+    while (cnt-- && isOk(x, y)) {
+        if (board[x][y] == BLACK) k++;
+        if (board[x][y] == WHITE) t++;
+        x++;
+        y--;
     }
 
-    // 如果总棋子数超过5，需要从该点向左上调整起点
-    int offset = 0;
-    if (g + b > 5) {
-        for (offset = 0; offset <= 4 && isValidPosition(x - offset, y - offset); ++offset) {
-            int newG = 0;
-            int newB = 0;
-            for (int i = 0; i < 5 && isValidPosition(x - offset + i, y - offset + i); ++i) {
-                if (board[x - offset + i][y - offset + i] == BLACK) {
-                    newG++;
-                } else if (board[x - offset + i][y - offset + i] == WHITE) {
-                    newB++;
-                }
-            }
-            if (newG + newB <= 5) {
-                g = newG;
-                b = newB;
-                break;
-            }
-        }
+    if (cnt >= 0) {
+        return QVector<int>();  // 超出边界，返回空
     }
 
-    return QVector<int>{g, b};
+    return QVector<int>{k, t};
 }
 
 QVector<int> AIEngine::getNums4(const int board[18][18], int x, int y)
 {
-    // 副对角线方向（右上到左下）
-    int g = 0;  // 电脑棋子数（黑棋）
-    int b = 0;  // 玩家棋子数（白棋）
+    // 副对角线方向（左下）：向右上延伸5格
+    int k = 0;  // 电脑棋子数（黑棋）
+    int t = 0;  // 玩家棋子数（白棋）
+    int cnt = 5;
 
-    // 向左下延伸
-    for (int i = 0; i < 5 && isValidPosition(x + i, y - i); ++i) {
-        if (board[x + i][y - i] == BLACK) {
-            g++;
-        } else if (board[x + i][y - i] == WHITE) {
-            b++;
-        }
+    while (cnt-- && isOk(x, y)) {
+        if (board[x][y] == BLACK) k++;
+        if (board[x][y] == WHITE) t++;
+        x--;
+        y--;
     }
 
-    // 如果总棋子数超过5，需要从该点向右上调整起点
-    int offset = 0;
-    if (g + b > 5) {
-        for (offset = 0; offset <= 4 && isValidPosition(x - offset, y + offset); ++offset) {
-            int newG = 0;
-            int newB = 0;
-            for (int i = 0; i < 5 && isValidPosition(x - offset + i, y + offset - i); ++i) {
-                if (board[x - offset + i][y + offset - i] == BLACK) {
-                    newG++;
-                } else if (board[x - offset + i][y + offset - i] == WHITE) {
-                    newB++;
-                }
-            }
-            if (newG + newB <= 5) {
-                g = newG;
-                b = newB;
-                break;
-            }
-        }
+    if (cnt >= 0) {
+        return QVector<int>();  // 超出边界，返回空
     }
 
-    return QVector<int>{g, b};
+    return QVector<int>{k, t};
 }
 
 int AIEngine::xPoints(const QVector<int>& nums, int ch)
 {
-    int g = nums[0];  // 电脑棋子数（黑棋）
-    int b = nums[1];  // 玩家棋子数（白棋）
+    if (nums.isEmpty()) {
+        return 0;
+    }
 
-    // 根据用户提供的评分规则
+    int g, b;
+    if (ch == BLACK) {
+        // ch = 1，获取己方得分
+        g = nums[0];  // 黑棋数
+        b = nums[1];  // 白棋数
+    } else {
+        // ch = 0，获取敌方得分
+        g = nums[1];  // 白棋数
+        b = nums[0];  // 黑棋数
+    }
+
+    // 评分规则
     if (g == 0 && b == 0) {
         return 10;
     } else if (g == 1 && b == 0) {
@@ -233,60 +194,97 @@ int AIEngine::xPoints(const QVector<int>& nums, int ch)
 
 int AIEngine::getPoints(const int board[18][18], int x, int y, int ch)
 {
-    // 获取四个方向的五元组情况
-    QVector<int> nums1 = getNums1(board, x, y);
-    QVector<int> nums2 = getNums2(board, x, y);
-    QVector<int> nums3 = getNums3(board, x, y);
-    QVector<int> nums4 = getNums4(board, x, y);
+    int ret = 0;
+    int x1 = x, y1 = y;
+    int x2 = x, y2 = y;
+    int x3 = x, y3 = y;
+    int x4 = x, y4 = y;
 
-    // 计算每个方向的得分
-    int score1 = xPoints(nums1, ch);
-    int score2 = xPoints(nums2, ch);
-    int score3 = xPoints(nums3, ch);
-    int score4 = xPoints(nums4, ch);
+    // 检查四个方向的五元组
+    for (int i = 0; i < 5; i++) {
+        // 水平方向
+        if (isOk(x1, y1)) {
+            ret += xPoints(getNums1(board, x1, y1), ch);
+            y1++;
+        }
 
-    // 累加所有方向的得分
-    return score1 + score2 + score3 + score4;
+        // 垂直方向
+        if (isOk(x2, y2)) {
+            ret += xPoints(getNums2(board, x2, y2), ch);
+            x2++;
+        }
+
+        // 主对角线方向
+        if (isOk(x3, y3)) {
+            ret += xPoints(getNums3(board, x3, y3), ch);
+            x3--;
+            y3++;
+        }
+
+        // 副对角线方向
+        if (isOk(x4, y4)) {
+            ret += xPoints(getNums4(board, x4, y4), ch);
+            x4++;
+            y4++;
+        }
+    }
+
+    return ret;
 }
 
-bool AIEngine::isValidPosition(int x, int y) const
+double AIEngine::getNowPoints(const int board[18][18], int ch)
 {
-    return x >= 0 && x < 18 && y >= 0 && y < 18;
-}
+    double ret = 0;
 
-QVector<AIMove> AIEngine::getValidMoves(const int board[18][18])
-{
-    QVector<AIMove> moves;
-    bool hasMoves = false;
-
-    // 首先检查是否有棋子
-    for (int i = 0; i < 18 && !hasMoves; ++i) {
-        for (int j = 0; j < 18 && !hasMoves; ++j) {
-            if (board[i][j] != EMPTY) {
-                hasMoves = true;
-                break;
+    for (int i = 0; i < 18; ++i) {
+        for (int j = 0; j < 18; ++j) {
+            if (board[i][j] == ch) {
+                ret += getPoints(board, i, j, ch) / 100.0;
             }
         }
     }
 
-    if (!hasMoves) {
-        // 棋盘为空，返回中心位置
+    return ret;
+}
+
+bool AIEngine::isOk(int x, int y) const
+{
+    return x >= 0 && x < 18 && y >= 0 && y < 18;
+}
+
+QVector<AIMove> AIEngine::getValidMoves(const int board[18][18], int steps)
+{
+    QVector<AIMove> moves;
+
+    // 检查是否有棋子
+    if (steps == 0) {
         moves.append(AIMove(9, 9, 0));
         return moves;
+    }
+
+    // 根据步数调整搜索范围
+    // 步数越少，搜索范围越大
+    int searchRange = 2;
+    if (steps < 10) {
+        searchRange = 3;
+    } else if (steps < 30) {
+        searchRange = 2;
+    } else {
+        searchRange = 1;
     }
 
     // 评估每个空位，只保留有价值的落子点
     for (int i = 0; i < 18; ++i) {
         for (int j = 0; j < 18; ++j) {
             if (board[i][j] == EMPTY) {
-                // 检查周围是否有棋子（2格范围内）
+                // 检查周围是否有棋子
                 bool hasNeighbor = false;
-                for (int di = -2; di <= 2; ++di) {
-                    for (int dj = -2; dj <= 2; ++dj) {
+                for (int di = -searchRange; di <= searchRange; ++di) {
+                    for (int dj = -searchRange; dj <= searchRange; ++dj) {
                         if (di == 0 && dj == 0) continue;
                         int ni = i + di;
                         int nj = j + dj;
-                        if (isValidPosition(ni, nj) && board[ni][nj] != EMPTY) {
+                        if (isOk(ni, nj) && board[ni][nj] != EMPTY) {
                             hasNeighbor = true;
                             break;
                         }
@@ -326,7 +324,7 @@ bool AIEngine::checkFiveInRow(const int board[18][18], int x, int y, int player)
         for (int i = 1; i < 5; ++i) {
             int newX = x + i * directions[d][0];
             int newY = y + i * directions[d][1];
-            if (isValidPosition(newX, newY) && board[newX][newY] == player) {
+            if (isOk(newX, newY) && board[newX][newY] == player) {
                 count++;
             } else {
                 break;
@@ -336,7 +334,7 @@ bool AIEngine::checkFiveInRow(const int board[18][18], int x, int y, int player)
         for (int i = 1; i < 5; ++i) {
             int newX = x - i * directions[d][0];
             int newY = y - i * directions[d][1];
-            if (isValidPosition(newX, newY) && board[newX][newY] == player) {
+            if (isOk(newX, newY) && board[newX][newY] == player) {
                 count++;
             } else {
                 break;
