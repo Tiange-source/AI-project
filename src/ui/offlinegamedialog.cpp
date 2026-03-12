@@ -14,12 +14,11 @@ OfflineGameDialog::OfflineGameDialog(QWidget* parent)
     , gameController_(new GameController(this))
     , aiEngine_(new AIEngine(this))
     , userProfile_(UserProfile::create())
-    , difficultyCombo_(nullptr)
     , turnLabel_(nullptr)
     , undoButton_(nullptr)
     , restartButton_(nullptr)
     , backButton_(nullptr)
-    , playerColor_(1)
+    , playerColor_(1)  // 默认玩家使用黑棋
     , isAITurn_(false)
 {
     ui_->setupUi(this);
@@ -31,10 +30,8 @@ OfflineGameDialog::OfflineGameDialog(QWidget* parent)
     setAttribute(Qt::WA_TranslucentBackground);
     setModal(true);
 
-    // 初始化游戏
-    gameController_->startGame();
-    boardWidget_->setEnabled(true);
-    updateGameInfo();
+    // 显示颜色选择对话框
+    showColorSelectionDialog();
 }
 
 OfflineGameDialog::~OfflineGameDialog()
@@ -83,49 +80,11 @@ void OfflineGameDialog::initUI()
     titleLayout->addWidget(titleLabel);
     titleLayout->addStretch();
 
-    // 难度选择
-    QLabel* difficultyLabel = new QLabel("AI难度:", mainContainer);
-    difficultyLabel->setStyleSheet(R"(
-        QLabel {
-            color: #ffffff;
-            font-size: 14px;
-            background: transparent;
-        }
-    )");
-    titleLayout->addWidget(difficultyLabel);
-
-    difficultyCombo_ = new QComboBox(mainContainer);
-    difficultyCombo_->addItem("简单", AIEngine::EASY);
-    difficultyCombo_->addItem("中等", AIEngine::MEDIUM);
-    difficultyCombo_->addItem("困难", AIEngine::HARD);
-    difficultyCombo_->setStyleSheet(R"(
-        QComboBox {
-            background: rgba(255, 255, 255, 0.95);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
-            padding: 5px 10px;
-            font-size: 14px;
-            color: #2c3e50;
-            min-width: 100px;
-        }
-        QComboBox::drop-down {
-            border: none;
-        }
-        QComboBox QAbstractItemView {
-            background: #ffffff;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            selection-background-color: #667eea;
-            selection-color: #ffffff;
-        }
-    )");
-    difficultyCombo_->setCurrentIndex(1);
-    titleLayout->addWidget(difficultyCombo_);
-
     mainLayout->addLayout(titleLayout);
 
     // 游戏信息
     QHBoxLayout* infoLayout = new QHBoxLayout();
-    turnLabel_ = new QLabel("当前回合: 黑棋（玩家）", mainContainer);
+    turnLabel_ = new QLabel("当前回合: 白棋（玩家）", mainContainer);
     turnLabel_->setStyleSheet(R"(
         QLabel {
             color: #ffffff;
@@ -232,7 +191,6 @@ void OfflineGameDialog::connectSignals()
     connect(restartButton_, &QPushButton::clicked, this, &OfflineGameDialog::onRestartButtonClicked);
     connect(backButton_, &QPushButton::clicked, this, &OfflineGameDialog::onBackButtonClicked);
     connect(undoButton_, &QPushButton::clicked, this, &OfflineGameDialog::onUndoButtonClicked);
-    connect(difficultyCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &OfflineGameDialog::onDifficultyChanged);
 }
 
 void OfflineGameDialog::onPieceClicked(int row, int col)
@@ -344,12 +302,6 @@ void OfflineGameDialog::onUndoButtonClicked()
     }
 }
 
-void OfflineGameDialog::onDifficultyChanged(int index)
-{
-    int difficulty = difficultyCombo_->currentData().toInt();
-    aiEngine_->setDifficulty(difficulty);
-}
-
 void OfflineGameDialog::updateGameInfo()
 {
     if (isAITurn_) {
@@ -386,11 +338,135 @@ void OfflineGameDialog::endGame(int winner)
 
     if (reply == QMessageBox::Yes) {
         gameController_->reset();
-        gameController_->startGame();
-        boardWidget_->reset();
-        boardWidget_->setEnabled(true);
-        updateGameInfo();
+        startGame();
     } else {
         accept();
+    }
+}
+
+void OfflineGameDialog::showColorSelectionDialog()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle("选择棋子颜色");
+    dialog.setFixedSize(400, 250);
+    dialog.setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+    dialog.setAttribute(Qt::WA_TranslucentBackground);
+
+    // 设置阴影效果
+    QGraphicsDropShadowEffect* shadow = new QGraphicsDropShadowEffect(&dialog);
+    shadow->setBlurRadius(20);
+    shadow->setColor(QColor(0, 0, 0, 150));
+    shadow->setOffset(0, 5);
+    dialog.setGraphicsEffect(shadow);
+
+    // 创建主容器
+    QWidget* mainContainer = new QWidget(&dialog);
+    mainContainer->setStyleSheet(R"(
+        QWidget {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                                        stop:0 #667eea, stop:1 #764ba2);
+            border-radius: 15px;
+        }
+    )");
+
+    // 创建布局
+    QVBoxLayout* layout = new QVBoxLayout(mainContainer);
+    layout->setContentsMargins(30, 30, 30, 30);
+    layout->setSpacing(20);
+
+    // 标题
+    QLabel* titleLabel = new QLabel("请选择棋子颜色", mainContainer);
+    titleLabel->setAlignment(Qt::AlignCenter);
+    titleLabel->setStyleSheet(R"(
+        QLabel {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+            background: transparent;
+        }
+    )");
+    layout->addWidget(titleLabel);
+
+    // 黑棋按钮
+    QPushButton* blackButton = new QPushButton("执黑棋（先手）", mainContainer);
+    blackButton->setMinimumHeight(45);
+    blackButton->setStyleSheet(R"(
+        QPushButton {
+            background: rgba(30, 30, 30, 0.95);
+            color: #ffffff;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background: rgba(50, 50, 50, 0.95);
+        }
+        QPushButton:pressed {
+            background: rgba(20, 20, 20, 0.95);
+        }
+    )");
+    layout->addWidget(blackButton);
+
+    // 白棋按钮
+    QPushButton* whiteButton = new QPushButton("执白棋（后手）", mainContainer);
+    whiteButton->setMinimumHeight(45);
+    whiteButton->setStyleSheet(R"(
+        QPushButton {
+            background: rgba(255, 255, 255, 0.95);
+            color: #2c3e50;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background: rgba(240, 240, 240, 0.95);
+        }
+        QPushButton:pressed {
+            background: rgba(220, 220, 220, 0.95);
+        }
+    )");
+    layout->addWidget(whiteButton);
+
+    dialog.setLayout(layout);
+
+    // 连接按钮信号
+    connect(blackButton, &QPushButton::clicked, &dialog, [&dialog, this]() {
+        playerColor_ = 1;  // 黑棋
+        dialog.accept();
+    });
+
+    connect(whiteButton, &QPushButton::clicked, &dialog, [&dialog, this]() {
+        playerColor_ = 2;  // 白棋
+        dialog.accept();
+    });
+
+    // 显示对话框
+    int result = dialog.exec();
+
+    // 如果用户关闭了对话框，默认选择黑棋
+    if (result == QDialog::Rejected) {
+        playerColor_ = 1;
+    }
+
+    startGame();
+}
+
+void OfflineGameDialog::startGame()
+{
+    gameController_->startGame();
+    boardWidget_->reset();
+    boardWidget_->setEnabled(true);
+
+    // 黑棋先手，如果玩家选择白棋，AI先下
+    isAITurn_ = (playerColor_ == 2);  // 玩家执白，AI先手
+    updateGameInfo();
+
+    // 如果AI先手，延迟让AI落子
+    if (isAITurn_) {
+        QTimer::singleShot(500, this, [this]() {
+            makeAIMove();
+        });
     }
 }

@@ -2,7 +2,6 @@
 #define OFFLINEGAMEDIALOG_H
 
 #include <QDialog>
-#include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
 #include <QSharedPointer>
@@ -33,7 +32,6 @@ private slots:
     void onRestartButtonClicked();
     void onBackButtonClicked();
     void onUndoButtonClicked();
-    void onDifficultyChanged(int index);
 
 private:
     Ui::OfflineGameDialog* ui_;
@@ -41,7 +39,6 @@ private:
     GameController* gameController_;
     AIEngine* aiEngine_;
     QSharedPointer<UserProfile> userProfile_;
-    QComboBox* difficultyCombo_;
     QLabel* turnLabel_;
     QPushButton* undoButton_;
     QPushButton* restartButton_;
@@ -55,6 +52,8 @@ private:
     void makeAIMove();
     void updateGameInfo();
     void endGame(int winner);
+    void showColorSelectionDialog();
+    void startGame();
 };
 
 #endif // OFFLINEGAMEDIALOG_H

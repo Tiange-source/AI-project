@@ -19,7 +19,7 @@ struct AIMove {
 /**
  * @brief AI引擎
  *
- * 使用五元组方案提供AI对战
+ * 使用五元组算法提供AI对战
  */
 class AIEngine : public QObject
 {
@@ -29,119 +29,64 @@ public:
     explicit AIEngine(QObject* parent = nullptr);
     ~AIEngine();
 
-    // 难度级别
-    static const int EASY = 1;
-    static const int MEDIUM = 2;
-    static const int HARD = 3;
-
     // 棋子常量
     static const int EMPTY = 0;
-    static const int BLACK = 1;
-    static const int WHITE = 2;
+    static const int BLACK = 1;  // 电脑
+    static const int WHITE = 2;  // 玩家
 
     /**
      * @brief 计算最佳落子位置
      * @param board 棋盘
-     * @param aiPlayer AI玩家
+     * @param aiPlayer AI玩家（应该为BLACK）
      * @return 最佳落子位置
      */
     AIMove computeMove(const int board[18][18], int aiPlayer);
 
-    /**
-     * @brief 设置难度
-     * @param difficulty 难度级别
-     */
-    void setDifficulty(int difficulty);
-
-    /**
-     * @brief 获取难度
-     */
-    int getDifficulty() const;
-
 private:
     /**
-     * @brief 简单难度：随机落子
-     */
-    AIMove computeEasyMove(const int board[18][18], int aiPlayer);
-
-    /**
-     * @brief 中等难度：五元组评分
-     */
-    AIMove computeMediumMove(const int board[18][18], int aiPlayer);
-
-    /**
-     * @brief 困难难度：五元组评分 + 搜索
-     */
-    AIMove computeHardMove(const int board[18][18], int aiPlayer);
-
-    /**
-     * @brief 五元组评分
+     * @brief 获取包含(x,y)点四个方向的五元组情况
      * @param board 棋盘
-     * @param row 行号
-     * @param col 列号
-     * @param player 玩家
-     * @return 分数
+     * @param x 行号
+     * @param y 列号
+     * @return 包含该点的五元组中黑棋和白棋的数量
      */
-    int evaluateFiveTuple(const int board[18][18], int row, int col, int player);
+    QVector<int> getNums1(const int board[18][18], int x, int y);  // 水平方向
+    QVector<int> getNums2(const int board[18][18], int x, int y);  // 垂直方向
+    QVector<int> getNums3(const int board[18][18], int x, int y);  // 主对角线方向
+    QVector<int> getNums4(const int board[18][18], int x, int y);  // 副对角线方向
 
     /**
-     * @brief 评估棋盘（五元组方案）
+     * @brief 一个五元组内，根据敌我棋的数量获取得分
+     * @param nums 包含黑棋和白棋数量的数组 [黑棋数, 白棋数]
+     * @param ch 评估对象（BLACK=电脑，WHITE=玩家）
+     * @return 该五元组的得分
+     */
+    int xPoints(const QVector<int>& nums, int ch);
+
+    /**
+     * @brief 获取该点的得分
      * @param board 棋盘
-     * @param player 玩家
-     * @return 分数
+     * @param x 行号
+     * @param y 列号
+     * @param ch 评估对象（BLACK=电脑，WHITE=玩家）
+     * @return 该点的总得分
      */
-    int evaluateBoardFiveTuple(const int board[18][18], int player);
-
-    /**
-     * @brief 检查某个方向上的五元组
-     * @param board 棋盘
-     * @param row 起始行
-     * @param col 起始列
-     * @param dx 行方向
-     * @param dy 列方向
-     * @param player 玩家
-     * @return 五元组类型和分数
-     */
-    QPair<int, int> checkLine(const int board[18][18], int row, int col, int dx, int dy, int player);
-
-    /**
-     * @brief 获取有效落子位置
-     */
-    QVector<AIMove> getValidMoves(const int board[18][18]);
-
-    /**
-     * @brief 极大极小算法（带五元组评估）
-     */
-    int minimax(int board[18][18], int depth, bool maximizing, int alpha, int beta, int player);
-
-    /**
-     * @brief 检查五子连珠
-     */
-    bool checkFiveInRow(const int board[18][18], int row, int col, int player);
+    int getPoints(const int board[18][18], int x, int y, int ch);
 
     /**
      * @brief 检查位置是否有效
      */
-    bool isValidPosition(int row, int col) const;
+    bool isValidPosition(int x, int y) const;
 
     /**
-     * @brief 复制棋盘
+     * @brief 获取有效落子位置（周围有棋子的空位）
      */
-    void copyBoard(const int src[18][18], int dst[18][18]);
+    QVector<AIMove> getValidMoves(const int board[18][18]);
 
-private:
-    int difficulty_;
-    static const int SEARCH_DEPTH = 3;
-
-    // 五元组评分权重
-    static const int SCORE_FIVE = 100000;        // 五连
-    static const int SCORE_LIVE_FOUR = 10000;   // 活四
-    static const int SCORE_DEAD_FOUR = 1000;    // 死四
-    static const int SCORE_LIVE_THREE = 1000;   // 活三
-    static const int SCORE_DEAD_THREE = 100;    // 死三
-    static const int SCORE_LIVE_TWO = 100;      // 活二
-    static const int SCORE_DEAD_TWO = 10;       // 死二
-    static const int SCORE_ONE = 1;             // 单子
+    /**
+     * @brief 检查五子连珠
+     */
+    bool checkFiveInRow(const int board[18][18], int x, int y, int player);
 };
 
 #endif // AIENGINE_H
